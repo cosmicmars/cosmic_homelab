@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Cosmic</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="hed">
+    <div class="left">
+        <span class="brand">Cosmic</span>
+    </div>
+
+    <nav class="nav">
+        <a class="active" href="index.html">Dashboard</a>
+        <a href="server.html">Servers</a>
+        <a href="container.html">Containers</a>
+        <a href="Alert.html">Alerts</a>
+        <a href="logs.html">Logs</a>
+    </nav>
+
+    <div class="right">
+        <button class="settings">Settings</button>
+    </div>
+    <style>
+        /* ───────── ШАПКА ЕБАННАЯ СУКА ───────── */
+    :root {
+        --bg: #0b0d10;
+        --panel: #121418;
+        --border: rgba(255,255,255,0.08);
+
+        --cyan: #4de6d1;
+        --green: #7be495;
+        --red: #ff6b6b;
+
+        --text: #ffffff;
+        --muted: #9aa0aa;
+    }
+    .hed {
+        height: 64px;
+        padding: 0 32px;
+        display: flex;
+
+        align-items: center;
+
+
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+    }
+
+
+    .brand {
+        font-weight: 600;
+    }
+
+    .nav {
+        display: flex;
+        gap: 32px;
+    }
+
+    .nav a {
+        color: var(--muted);
+        text-decoration: none;
+        font-weight: 500;
+
+        position: relative;
+    }
+
+    .nav a.active {
+        color: var(--text);
+        transition: transform .25s ease, box-shadow .25s ease;
+    }
+
+    .nav a.active::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -22px;
+        width: 100%;
+        height: 2px;
+        background: var(--cyan);
+    }
+
+    .settings {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        color: white;
+        padding: 8px 18px;
+        border-radius: 999px;
+        font-weight: 500;
+    }</style>
+</header>
+
+<main class="wrap">
+    <section class="all-card">
+        <h1 class="hint hint-left">1</h1>
+            <section class="cards left-card">
+                <div class="top"></div>
+                <div class="card cyan">
+                    <div class="card-controls" data-status="running">
+                        <span class="status-dot"></span>
+                        <div class="actions">
+                            <button class="btn start" title="Start">▶</button>
+                            <button class="btn stop" title="Stop">■</button>
+                            <button class="btn restart" title="Restart">↻</button>
+                        </div>
+                    </div>
+                    <h4 class="h">Server Name</h4>
+                    <div class="value">260 RM</div>
+                    <canvas></canvas>
+                </div>
+
+                <div class="card cyan">
+                    <div class="card-controls" data-status="running">
+                        <span class="status-dot"></span>
+                        <div class="actions">
+                            <button class="btn start" title="Start">▶</button>
+                            <button class="btn stop" title="Stop">■</button>
+                            <button class="btn restart" title="Restart">↻</button>
+                        </div>
+                    </div>
+                    <h4>Server Name</h4>
+                    <div class="value">351 RM</div>
+                    <canvas></canvas>
+                </div>
+                <p></p>
+                <p></p>
+                <div class="card green">
+                    <div class="card-controls" data-status="running">
+                        <span class="status-dot"></span>
+                        <div class="actions">
+                            <button class="btn start" title="Start">▶</button>
+                            <button class="btn stop" title="Stop">■</button>
+                            <button class="btn restart" title="Restart">↻</button>
+                        </div>
+                    </div>
+                    <h4>Server Name</h4>
+                    <div class="value">124 Disk</div>
+                    <canvas></canvas>
+                </div>
+                <div class="card green">
+                    <div class="card-controls" data-status="running">
+                        <span class="status-dot"></span>
+                        <div class="actions">
+                            <button class="btn start" title="Start">▶</button>
+                            <button class="btn stop" title="Stop">■</button>
+                            <button class="btn restart" title="Restart">↻</button>
+                        </div>
+                    </div>
+                    <h4>Server Name</h4>
+                    <div class="value">363 Disk</div>
+                    <canvas></canvas>
+                </div>
+            </section>
+            <h1 class="hint hint-right">2</h1>
+                <section class="cards right-card">
+                    <div class="top"></div>
+                    <div class="card red">
+                        <div class="card-controls" data-status="running">
+                            <span class="status-dot"></span>
+                            <div class="actions">
+                                <button class="btn start" title="Start">▶</button>
+                                <button class="btn stop" title="Stop">■</button>
+                                <button class="btn restart" title="Restart">↻</button>
+                            </div>
+                        </div>
+                        <h4>Server Name</h4>
+                        <div class="value">12 Disk</div>
+                        <canvas></canvas>
+                    </div>
+
+                    <div class="card cyan">
+                        <div class="card-controls" data-status="running">
+                            <span class="status-dot"></span>
+                            <div class="actions">
+                                <button class="btn start" title="Start">▶</button>
+                                <button class="btn stop" title="Stop">■</button>
+                                <button class="btn restart" title="Restart">↻</button>
+                            </div>
+                        </div>
+                        <h4>Server Name</h4>
+                        <div class="value">33 RM</div>
+                        <canvas></canvas>
+                    </div>
+                    <p></p>
+                    <p></p>
+                    <div class="card red">
+                        <div class="card-controls" data-status="running">
+                            <span class="status-dot"></span>
+                            <div class="actions">
+                                <button class="btn start" title="Start">▶</button>
+                                <button class="btn stop" title="Stop">■</button>
+                                <button class="btn restart" title="Restart">↻</button>
+                            </div>
+                        </div>
+                        <h4>Server Name</h4>
+                        <div class="value">22 Disk</div>
+                        <canvas></canvas>
+                    </div>
+
+                    <div class="card red">
+                        <div class="card-controls" data-status="running">
+                            <span class="status-dot"></span>
+                            <div class="actions">
+                                <button class="btn start" title="Start">▶</button>
+                                <button class="btn stop" title="Stop">■</button>
+                                <button class="btn restart" title="Restart">↻</button>
+                            </div>
+                        </div>
+                        <h4>Server Name</h4>
+                        <div class="value">281 Disk</div>
+                        <canvas></canvas>
+                    </div>
+                </section>
+
+                <section class="chart-big">
+                    <canvas id="bigChart"></canvas>
+                </section>
+    </section>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>

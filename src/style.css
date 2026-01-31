@@ -1,0 +1,281 @@
+:root {
+    --bg: #0b0d10;
+    --panel: #121418;
+    --border: rgba(255,255,255,0.08);
+
+    --cyan: #4de6d1;
+    --green: #7be495;
+    --red: #ff6b6b;
+
+    --text: #ffffff;
+    --muted: #9aa0aa;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, system-ui;
+    background: radial-gradient(circle at top, #121418, #07080a);
+    color: var(--text);
+}
+
+/* ───────── ШАПКА ЕБАННАЯ СУКА ───────── */
+
+.hed {
+    height: 64px;
+    padding: 0 32px;
+    display: flex;
+
+    align-items: center;
+    flex-direction: row;
+
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+}
+
+.left {
+    flex-direction: row;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+}
+
+
+.brand {
+    font-weight: 600;
+}
+
+.nav {
+    display: flex;
+    gap: 32px;
+}
+
+.nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 500;
+
+    position: relative;
+}
+
+.nav a.active {
+    color: var(--text);
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.nav a.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -22px;
+    width: 100%;
+    height: 2px;
+    background: var(--cyan);
+}
+
+.settings {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: white;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-weight: 500;
+}
+
+/* ───────── Основа!!(шаблоны) ───────── */
+
+.wrap {
+    padding: 36px;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 26px;
+}
+
+/* ───────── Card Controls ───────── */
+
+
+.card {
+    position: relative;
+    height: 200px;
+    width: 21vw;
+    border-radius: 22px;
+
+    padding:
+            19px 22px 22px 22px;
+
+    background:
+            radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.08), transparent 60%),
+            var(--panel);
+
+    border: 1px solid var(--border);
+    overflow: hidden;
+
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+
+.card-controls {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    pointer-events: auto;
+    z-index: 4;
+}
+.left-card {
+    width: 50%;
+    transition: background 0.2s ease, transform 0.70s ease;
+
+    padding:
+            4px 0px 0px 5px;
+}
+.left-card:hover {
+    background: rgba(255,255,255,0.15);
+    transform: scale(1.05);
+}
+
+.right-card {
+
+    width: 50%;
+    align-content: end;
+    transition: background 0.2s ease, transform 0.70s ease;
+
+
+    padding:
+            4px 0px 0px 5px;
+}
+
+.right-card:hover {
+    background: rgba(255,255,255,0.15);
+    transform: scale(1.05);
+}
+.all-card {
+    display: flex;
+    width: 100%;
+}
+
+/* ───────── СТАТУСЫ ЕБАННЫЕ ───────── */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(123, 228, 149, 0.8);
+}
+
+.card-controls[data-status="stopped"] .status-dot {
+    background: var(--red);
+    box-shadow: 0 0 8px rgba(255, 107, 107, 0.8);
+}
+
+/* ───────── ФОРМЫ ───────── */
+.actions {
+    display: flex;
+    gap: 6px;
+}
+
+
+.hint {
+    font-size: 600%;
+    font-weight: 900;
+    color: #88909c;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    opacity: 0.4;
+}
+
+.hint-left {
+    transform: translate(-800%, -160%);  /* Сдвиг на -50% ширины и высоты элемента */
+}
+
+.hint-right {
+    transform: translate(500%, -160%);  /* Сдвиг на -50% ширины и высоты элемента */
+}
+
+.card canvas {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+
+    height: 100px;
+    width: 100%;
+
+    pointer-events: none;
+
+}
+
+.card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 40px rgba(255,255,255,0.08);
+}
+
+.card h4 {
+    margin: 0;
+    font-weight: 500;
+}
+
+
+.btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: white;
+    font-size: 11px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn:hover {
+    background: rgba(255,255,255,0.15);
+    transform: scale(1.05);
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+
+
+
+/* ───────── Цвето кор ───────── */
+
+.card.cyan { --accent: var(--cyan); }
+.card.green { --accent: var(--green); }
+.card.red { --accent: var(--red); }
+
+.btn.start { color: #7be495; }
+.btn.stop { color: #ff6b6b; }
+.btn.restart { color: #4de6d1; }
+
+/* ───────── АЗХУЕВШИЙ ГРАФИК───────── */
+
+.chart-big {
+    margin-top: 42px;
+    height: 260px;
+    padding: 0;
+}
+
+#bigChart {
+    width: 100%;
+    height: 50vh;
+    display: flex;
+}
+
