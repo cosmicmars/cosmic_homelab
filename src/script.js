@@ -12,9 +12,9 @@ function drawSmoothArea(canvas, color) {
 
     const padding = {
         top: 6,
-        right: 6,
-        bottom: 6,
-        left: 6
+        right: 0,
+        bottom: 0,
+        left: 0
     };
 
     const cw = w - padding.left - padding.right;

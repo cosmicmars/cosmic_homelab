@@ -104,7 +104,7 @@ body {
 .card {
     position: relative;
     height: 200px;
-    width: 21vw;
+    width: 20vw;
     border-radius: 22px;
 
     padding:
@@ -123,8 +123,8 @@ body {
 
 .card-controls {
     position: absolute;
-    top: 14px;
-    right: 14px;
+    top: 2vh;
+    right: 1vw;
 
     display: flex;
     align-items: center;
@@ -137,8 +137,6 @@ body {
     width: 50%;
     transition: background 0.2s ease, transform 0.70s ease;
 
-    padding:
-            4px 0px 0px 5px;
 }
 .left-card:hover {
     background: rgba(255,255,255,0.15);
@@ -152,8 +150,6 @@ body {
     transition: background 0.2s ease, transform 0.70s ease;
 
 
-    padding:
-            4px 0px 0px 5px;
 }
 
 .right-card:hover {
@@ -182,26 +178,37 @@ body {
 /* ───────── ФОРМЫ ───────── */
 .actions {
     display: flex;
-    gap: 6px;
+    gap: 0.4vw;
 }
 
-
+.h {
+    font-size: 200%;
+    position: relative;
+    text-align: center;
+}
+.h-serv {
+    font-size: 150%;
+    padding-bottom: 1vh;
+}
 .hint {
     font-size: 600%;
     font-weight: 900;
     color: #88909c;
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 23vh;
+
+
     opacity: 0.4;
+    text-decoration: none;
+    transition: transform .25s ease, box-shadow .25s ease;
 }
 
 .hint-left {
-    transform: translate(-800%, -160%);  /* Сдвиг на -50% ширины и высоты элемента */
+    left: 24.5vw;
 }
 
 .hint-right {
-    transform: translate(500%, -160%);  /* Сдвиг на -50% ширины и высоты элемента */
+    left: 72vw;
 }
 
 .card canvas {
@@ -268,14 +275,15 @@ body {
 /* ───────── АЗХУЕВШИЙ ГРАФИК───────── */
 
 .chart-big {
-    margin-top: 42px;
+    margin-top: 3vw;
     height: 260px;
     padding: 0;
+    display: flex;
+    justify-content: center;
 }
 
 #bigChart {
-    width: 100%;
-    height: 50vh;
-    display: flex;
+    width: 90%;
+    height: 100%;
 }
 
