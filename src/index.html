@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>Cosmic</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="/src/style.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -16,154 +16,41 @@
 
     <nav class="nav">
         <a class="active" href="index.html">Dashboard</a>
-        <a href="server.html">Servers</a>
-        <a href="container.html">Containers</a>
-        <a href="Alert.html">Alerts</a>
-        <a href="logs.html">Logs</a>
+        <a href="./pages/server.html">Servers</a>
+        <a href="./pages/container.html">Containers</a>
+        <a href="./pages/alert.html">Alerts</a>
+        <a href="./pages/logs.html">Logs</a>
     </nav>
 
     <div class="right">
         <button class="settings">Settings</button>
     </div>
-    <style>/* ───────── ШАПКА ЕБАННАЯ СУКА ───────── */
-
-    .hed {
-        height: 64px;
-        padding: 0 32px;
-        display: flex;
-
-        align-items: center;
-
-
-        justify-content: space-between;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-    }
-
-
-    .brand {
-        font-weight: 600;
-    }
-
-    .nav {
-        display: flex;
-        gap: 32px;
-    }
-
-    .nav a {
-        color: var(--muted);
-        text-decoration: none;
-        font-weight: 500;
-
-        position: relative;
-    }
-
-    .nav a.active {
-        color: var(--text);
-        transition: transform .25s ease, box-shadow .25s ease;
-    }
-
-    .nav a.active::after {
-        content: "";
-        position: absolute;
-        left: 0;
-        bottom: -22px;
-        width: 100%;
-        height: 2px;
-        background: var(--cyan);
-    }
-
-    .settings {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid var(--border);
-        color: white;
-        padding: 8px 18px;
-        border-radius: 999px;
-        font-weight: 500;
-    }</style>
 </header>
 
+<div class="hedir">
+    <h1 class="h h-pr">Hello, select your server</h1>
+    <button id="openServerModal" class="settings">Select server</button>
+</div>
+
+<!-- modalka-davalka -->
+<div class="modal hidden" id="serverModal">
+    <div class="modal-content">
+        <h3>Select up to 2 servers</h3>
+        <ul id="serverList"></ul>
+        <button id="applyServers" class="modal-apply" disabled>
+            Load selected servers
+        </button>
+    </div>
+</div>
+
+<!-- tut-servera -->
 <main class="wrap">
-    <section class="all-card">
-        <section class="cards left-card">
-            <h1 class="hint hint-left">1</h1>
-                <div class="top"></div>
-                <div class="card cyan">
-
-                    <h4 class="h">260 RM</h4>
-                    <canvas></canvas>
-                </div>
-                <div class="card cyan">
-                    <h4 class="h">26 °C</h4>
-                    <canvas></canvas>
-                </div>
-                <p></p>
-                <p></p>
-                <div class="card green">
-                    <h4 class="h">124 GB</h4>
-                    <canvas></canvas>
-                </div>
-                <div class="card green">
-                    <div class="card-controls" data-status="running">
-                        <span class="status-dot"></span>
-                        <div class="actions">
-                            <button class="btn start" title="Start">▶</button>
-                            <button class="btn stop" title="Stop">■</button>
-                            <button class="btn restart" title="Restart">↻</button>
-                        </div>
-                    </div>
-                    <h4 class="h-serv">Server 1</h4>
-                    <div class="value">Work - 3 hours</div>
-                    <canvas></canvas>
-                </div>
-        </section>
-
-
-        <section class="cards right-card">
-            <h1 class="hint hint-right">2</h1>
-            <div class="top"></div>
-            <div class="card red">
-                <h4 class="h">400 RM</h4>
-                <canvas></canvas>
-            </div>
-
-            <div class="card cyan">
-                <h4 class="h">54 °C</h4>
-                <canvas></canvas>
-            </div>
-            <p></p>
-            <p></p>
-            <div class="card red">
-                <h4 class="h">812 GB</h4>
-                <canvas></canvas>
-            </div>
-
-            <div class="card red">
-                <div class="card-controls" data-status="running">
-                    <span class="status-dot"></span>
-                    <div class="actions">
-                        <button class="btn start" title="Start">▶</button>
-                        <button class="btn stop" title="Stop">■</button>
-                        <button class="btn restart" title="Restart">↻</button>
-                    </div>
-                </div>
-                <h4 class="h-serv">Server 2</h4>
-                <div class="value">Work - 6 hours</div>
-                <canvas></canvas>
-            </div>
-        </section>
-    </section>
-    <section class="chart-big">
+    <div id="serversContainer" class="all-card hidden"></div>
+    <section class="chart-big hidden" id="bigChartContainer">
         <canvas id="bigChart"></canvas>
     </section>
 </main>
 
-<script src="script.js"></script>
+<script type="module" src="./script.js"></script>
 </body>
 </html>

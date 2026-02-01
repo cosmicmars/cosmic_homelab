@@ -22,28 +22,23 @@ body {
     color: var(--text);
 }
 
-/* ───────── ШАПКА ЕБАННАЯ СУКА ───────── */
-
+/* goloven */
 .hed {
     height: 64px;
     padding: 0 32px;
     display: flex;
-
     align-items: center;
     flex-direction: row;
-
     justify-content: space-between;
     border-bottom: 1px solid var(--border);
 }
 
 .left {
-    flex-direction: row;
     display: flex;
+    flex-direction: row;
     align-items: center;
     gap: 10px;
-
 }
-
 
 .brand {
     font-weight: 600;
@@ -58,7 +53,6 @@ body {
     color: var(--muted);
     text-decoration: none;
     font-weight: 500;
-
     position: relative;
 }
 
@@ -86,8 +80,7 @@ body {
     font-weight: 500;
 }
 
-/* ───────── Основа!!(шаблоны) ───────── */
-
+/* xuina */
 .wrap {
     padding: 36px;
 }
@@ -98,70 +91,79 @@ body {
     gap: 26px;
 }
 
-/* ───────── Card Controls ───────── */
+.all-card {
+    display: flex;
+    width: 100%;
+}
 
-
+/* cartochki*/
 .card {
     position: relative;
     height: 200px;
     width: 20vw;
     border-radius: 22px;
-
-    padding:
-            19px 22px 22px 22px;
-
-    background:
-            radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.08), transparent 60%),
-            var(--panel);
-
+    padding: 19px 22px 22px 22px;
+    background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.08), transparent 60%), var(--panel);
     border: 1px solid var(--border);
     overflow: hidden;
-
     transition: transform .25s ease, box-shadow .25s ease;
 }
+
+.card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 40px rgba(255,255,255,0.08);
+}
+
+
+
+.left-card, .right-card {
+    width: 50%;
+    transition: background 0.2s ease, transform 0.7s ease;
+}
+
+.left-card:hover, .right-card:hover {
+    background: rgba(255,255,255,0.15);
+    transform: scale(1.05);
+}
+
+.right-card {
+    align-content: end;
+}
+
+
+
+.card h4 {
+    margin: 0;
+    font-weight: 500;
+}
+
+.card canvas {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100px;
+    width: 100%;
+    pointer-events: none;
+}
+
+
+
+
 
 
 .card-controls {
     position: absolute;
     top: 2vh;
     right: 1vw;
-
     display: flex;
     align-items: center;
     gap: 10px;
-
     pointer-events: auto;
     z-index: 4;
 }
-.left-card {
-    width: 50%;
-    transition: background 0.2s ease, transform 0.70s ease;
 
-}
-.left-card:hover {
-    background: rgba(255,255,255,0.15);
-    transform: scale(1.05);
-}
-
-.right-card {
-
-    width: 50%;
-    align-content: end;
-    transition: background 0.2s ease, transform 0.70s ease;
-
-
-}
-
-.right-card:hover {
-    background: rgba(255,255,255,0.15);
-    transform: scale(1.05);
-}
-.all-card {
-    display: flex;
-    width: 100%;
-}
-
-/* ───────── СТАТУСЫ ЕБАННЫЕ ───────── */
+/* knopkj*/
 .status-dot {
     width: 10px;
     height: 10px;
@@ -175,67 +177,7 @@ body {
     box-shadow: 0 0 8px rgba(255, 107, 107, 0.8);
 }
 
-/* ───────── ФОРМЫ ───────── */
-.actions {
-    display: flex;
-    gap: 0.4vw;
-}
-
-.h {
-    font-size: 200%;
-    position: relative;
-    text-align: center;
-}
-.h-serv {
-    font-size: 150%;
-    padding-bottom: 1vh;
-}
-.hint {
-    font-size: 600%;
-    font-weight: 900;
-    color: #88909c;
-    position: absolute;
-    top: 23vh;
-
-
-    opacity: 0.4;
-    text-decoration: none;
-    transition: transform .25s ease, box-shadow .25s ease;
-}
-
-.hint-left {
-    left: 24.5vw;
-}
-
-.hint-right {
-    left: 72vw;
-}
-
-.card canvas {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-
-
-    height: 100px;
-    width: 100%;
-
-    pointer-events: none;
-
-}
-
-.card:hover {
-    transform: scale(1.02);
-    box-shadow: 0 0 40px rgba(255,255,255,0.08);
-}
-
-.card h4 {
-    margin: 0;
-    font-weight: 500;
-}
-
-
+/* knopochki  */
 .btn {
     width: 22px;
     height: 22px;
@@ -259,20 +201,53 @@ body {
     transform: scale(0.95);
 }
 
-
-
-
-/* ───────── Цвето кор ───────── */
-
+.btn.start { color: #7be495; }
+.btn.stop { color: #ff6b6b; }
+.btn.restart { color: #4de6d1; }
 .card.cyan { --accent: var(--cyan); }
 .card.green { --accent: var(--green); }
 .card.red { --accent: var(--red); }
 
-.btn.start { color: #7be495; }
-.btn.stop { color: #ff6b6b; }
-.btn.restart { color: #4de6d1; }
+.hedir {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 
-/* ───────── АЗХУЕВШИЙ ГРАФИК───────── */
+.h {
+    font-size: 200%;
+    position: relative;
+    text-align: center;
+}
+
+.h-serv {
+    font-size: 150%;
+    padding-bottom: 1vh;
+}
+
+.h-pr {
+    font-size: 300%;
+}
+
+.hint {
+    font-size: 600%;
+    font-weight: 900;
+    color: #88909c;
+    position: absolute;
+    top: 23vh;
+    opacity: 0.4;
+    text-decoration: none;
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.hint-left { left: 24.5vw; }
+.hint-right { left: 72vw; }
+
+.actions {
+    display: flex;
+    gap: 0.4vw;
+}
+
 
 .chart-big {
     margin-top: 3vw;
@@ -287,3 +262,134 @@ body {
     height: 100%;
 }
 
+/* modalka-davalka */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.hidden { display: none; }
+
+.modal-content {
+    background: #0f141a;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    width: 320px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+
+/* Server list */
+#serverList {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+}
+
+#serverList li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+#serverList li:hover { background: rgba(255,255,255,0.05); }
+
+#serverList input {
+    accent-color: var(--cyan);
+    cursor: pointer;
+}
+
+
+.modal-apply {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--cyan);
+    color: #000;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s, transform .2s;
+}
+
+.modal-apply:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+/*podgruzka */
+.loading {
+    animation: pulse 1.2s infinite;
+    opacity: .6;
+}
+
+@keyframes pulse {
+    0% { opacity: .3 }
+    50% { opacity: .8 }
+    100% { opacity: .3 }
+}
+
+/* OPEN SERVER BUTTON*/
+#openServerModal {
+    width: 15vw;
+    position: relative;
+    margin: 0 auto;
+    background: linear-gradient(135deg, rgba(77, 230, 209, 0.15), rgba(77, 230, 209, 0.05));
+    border: 1px solid rgba(77, 230, 209, 0.35);
+    color: #e9ffff;
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.25s ease;
+}
+
+#openServerModal:hover {
+    background: linear-gradient(135deg, rgba(77, 230, 209, 0.25), rgba(77, 230, 209, 0.1));
+    border-color: rgba(77, 230, 209, 0.6);
+    box-shadow: 0 0 0 1px rgba(77, 230, 209, 0.3), 0 8px 28px rgba(77, 230, 209, 0.25);
+    transform: translateY(-1px);
+}
+
+#openServerModal:active {
+    transform: translateY(0);
+    box-shadow: 0 0 0 1px rgba(77, 230, 209, 0.4), 0 4px 14px rgba(77, 230, 209, 0.35);
+}
+
+#openServerModal:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(77, 230, 209, 0.6), 0 0 30px rgba(77, 230, 209, 0.4);
+}
+
+#openServerModal.loading {
+    pointer-events: none;
+    opacity: 0.7;
+    box-shadow: none;
+}
+
+/* Serv */
+.servers {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.server-block {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 26px;
+}
