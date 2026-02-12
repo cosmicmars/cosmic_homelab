@@ -83,9 +83,10 @@ def create_container(name: str, image: str = "ubuntu", cmd: str = "sleep 3600"):
         client.images.get(image)
     except:
         client.images.pull(image)
-    c = client.containers.run(image, cmd, name=name, detach=True)
+    
+    c = client.containers.run(image, cmd.split(), name=name, detach=True)
+    
     return {"status": "created", "id": c.short_id, "name": name}
-
 @app.get("/remove")
 def remove_container(name: str):
     check_docker()
