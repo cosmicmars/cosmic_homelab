@@ -1,6 +1,7 @@
 import docker
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import os
 import datetime
@@ -15,6 +16,14 @@ DATA_FILE = Path("data.json")
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 client = None
 
 def save_data(data: dict):
