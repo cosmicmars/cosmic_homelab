@@ -1,0 +1,19 @@
+{
+  "home": {
+    "status": "ok",
+    "docker": true
+  },
+  "images": [
+    "ubuntu:latest"
+  ],
+  "container_id": "a04f77cc8911",
+  "container_ip": {
+    "bridge": "172.17.0.2"
+  },
+  "container_cpu": {
+    "cpu_percent": 0.0
+  },
+  "container_uptime": {
+    "uptime": "2m 31s"
+  }
+}

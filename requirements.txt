@@ -1,0 +1,5 @@
+docker
+uvicorn[standard]
+fastapi
+psutil
+httpx
