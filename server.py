@@ -1,7 +1,8 @@
 import docker
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pathlib import Path
 import os
 import datetime
@@ -10,6 +11,8 @@ import psutil
 import json
 from pathlib import Path
 import httpx
+import asyncio
+
 
 BASE_URL = "http://127.0.0.1:8000"  # или твой порт/хост
 DATA_FILE = Path("data.json")
@@ -211,7 +214,20 @@ def collect_via_api(container_id: str):
     save_data(data)
     return data
 
+# ТЕСТ ТРАНСЛЯЦИИ 
 
+@app.get("/sse/container/{container_id}/uptime")
+async def stream_uptime(container_id: str, request: Request):
+    async def generate():
+        while not await request.is_disconnected():
+            try:
+                data = get_uptime(container_id)  # твоя существующая функция
+                yield f"data: {json.dumps(data)}\n\n"
+            except:
+                yield f"data: {json.dumps({'error': 'Ошибка'})}\n\n"
+            await asyncio.sleep(2)
+    
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
