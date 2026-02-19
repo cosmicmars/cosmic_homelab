@@ -24,6 +24,6 @@ export const servers = [
         temp: "48°C",
         proc: "22%",
         storage: "2.4 TB",
-        uptime: "0 "
+        uptime: "1 "
     }
 ];

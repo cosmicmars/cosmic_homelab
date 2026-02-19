@@ -147,7 +147,6 @@ function initServerModal() {
         startAutoUpdate(server.id, updateUI);
     };
 
-    /* закрыть модалку */
     document.addEventListener("keydown", e => {
         if (e.key === "Escape") modal.classList.add("hidden");
     });
@@ -157,6 +156,9 @@ function initServerModal() {
     });
 }
 
+
+// коментарийййй //
+
 let cpuHistory = [];
 const MAX_HISTORY = 16;
 const BIG_HISTORY = 40;
@@ -164,7 +166,7 @@ const BIG_HISTORY = 40;
 const colorMap = {
     cyan: "#4de6d1",
     green: "#7be495",
-    red: "#ff6b6b"
+    red: "#"
 };
 
 /*  маленькие графики  */
@@ -259,7 +261,7 @@ function drawBigChart(dataPoints = null) {
     ctx.stroke();
 }
 
-// рендер //
+// рендер комент!! //
 async function fetchInitialData(serverId) {
     console.log(`🔄 fetchInitialData для ${serverId}`);
     const baseUrl = "http://127.0.0.1:8000";
