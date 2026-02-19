@@ -6,7 +6,7 @@ export const servers = [
         proc: "14%",
         temp: "54°C",
         storage: "1.2 TB",
-        uptime: "12 days"
+        uptime: "0 "
     },
     {
         id: "beta",
@@ -15,7 +15,7 @@ export const servers = [
         temp: "61°C",
         proc: "4%",
         storage: "860 GB",
-        uptime: "7 days"
+        uptime: "0 "
     },
     {
         id: "gamma",
@@ -24,6 +24,6 @@ export const servers = [
         temp: "48°C",
         proc: "22%",
         storage: "2.4 TB",
-        uptime: "29 days"
+        uptime: "0 "
     }
 ];

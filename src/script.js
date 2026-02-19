@@ -1,11 +1,12 @@
 import { servers } from "./services/servers.js";
+import { startAutoUpdate, stopAutoUpdate } from "./services/apiUpdater.js";
 
-/*INIT DOM */
+/* INIT DOM */
 document.addEventListener("DOMContentLoaded", () => {
     initServerModal();
 });
 
-/* serv  */
+/* serv */
 function initServerModal() {
     const modal = document.getElementById("serverModal");
     const list = document.getElementById("serverList");
@@ -23,13 +24,13 @@ function initServerModal() {
         red: "#ff6b6b"
     };
 
-    /* модалка  */
+    /* модалка */
     openBtn.onclick = () => {
         modal.classList.remove("hidden");
         renderList();
     };
 
-    /*  render  */
+    /* render */
     function renderList() {
         list.innerHTML = "";
 
@@ -42,6 +43,7 @@ function initServerModal() {
             const checkbox = document.createElement("input");
             checkbox.type = "radio";
             checkbox.name = "server";
+            checkbox.value = server.id;
             checkbox.checked = selectedServerId === server.id;
 
             checkbox.addEventListener("change", () => {
@@ -68,6 +70,8 @@ function initServerModal() {
         const server = servers.find(s => s.id === selectedServerId);
         if (!server) return;
 
+        console.log(' applyBtn.onclick для сервера:', server.id);
+
         serversContainer.style.display = "flex";
         serversContainer.style.justifyContent = "center";
 
@@ -78,7 +82,7 @@ function initServerModal() {
         serverBlock.style.gap = "20px";
 
         const cardTypes = [
-            { type: "ram", value: server.ram, color: "cyan" },
+            { type: "cpu", value: "0%", color: "cyan" },
             { type: "temp", value: server.temp, color: "red" },
             { type: "storage", value: server.storage, color: "green" },
             {
@@ -92,30 +96,34 @@ function initServerModal() {
         cardTypes.forEach(ct => {
             const card = document.createElement("div");
             card.className = `card ${ct.color}`;
+            card.dataset.metric = ct.type;
 
             if (ct.type === "server") {
                 card.innerHTML = `
-          <div class="card-controls" data-status="running">
-            <span class="status-dot"></span>
-            <div class="actions">
-              <button class="btn start">▶</button>
-              <button class="btn stop">■</button>
-              <button class="btn restart">↻</button>
-            </div>
-          </div>
-          <h4 class="h-serv">${ct.name}</h4>
-          <div class="value">${ct.value}</div>
-          <canvas></canvas>
-        `;
+                    <div class="card-controls" data-status="running">
+                        <span class="status-dot"></span>
+                        <div class="actions">
+                            <button class="btn start">▶</button>
+                            <button class="btn stop">■</button>
+                            <button class="btn restart">↻</button>
+                        </div>
+                    </div>
+                    <h4 class="h-serv">${ct.name}</h4>
+                    <div class="value">${ct.value}</div>
+                    <canvas></canvas>
+                `;
             } else {
                 card.innerHTML = `<h4 class="h">${ct.value}</h4><canvas></canvas>`;
             }
 
             serverBlock.appendChild(card);
 
+            
             requestAnimationFrame(() => {
-                const canvas = card.querySelector("canvas");
-                drawSmoothArea(canvas, colorMap[ct.color]);
+                const canvas = card.querySelector('canvas');
+                if (canvas) {
+                    drawSmoothArea(canvas, colorMap[ct.color]);
+                }
             });
         });
 
@@ -123,25 +131,23 @@ function initServerModal() {
         serversContainer.classList.remove("hidden");
         bigChartContainer.classList.remove("hidden");
 
-        setTimeout(() => {
-            document
-                .querySelectorAll(".server-block canvas")
-                .forEach((canvas, i) => {
-                    const card = canvas.closest(".card");
-                    const color = card.classList.contains("cyan")
-                        ? "#4de6d1"
-                        : card.classList.contains("red")
-                            ? "#ff6b6b"
-                            : "#7be495";
+        drawBigChart();
 
-                    drawSmoothArea(canvas, color);
-                });
+        fetchInitialData(server.id).then(initialMetrics => {
+            if (initialMetrics) {
+                cpuHistory = [initialMetrics.cpu];
+                updateUIText(initialMetrics);
+                const cpuCanvas = document.querySelector('[data-metric="cpu"] canvas');
+                if (cpuCanvas) drawSmoothArea(cpuCanvas, colorMap.cyan, cpuHistory);
+                drawBigChart(cpuHistory);
+            }
+        });
 
-            drawBigChart();
-        }, 100);
+        stopAutoUpdate();
+        startAutoUpdate(server.id, updateUI);
     };
 
-    /*  закрыть модалку  */
+    /* закрыть модалку */
     document.addEventListener("keydown", e => {
         if (e.key === "Escape") modal.classList.add("hidden");
     });
@@ -151,11 +157,20 @@ function initServerModal() {
     });
 }
 
+let cpuHistory = [];
+const MAX_HISTORY = 16;
+const BIG_HISTORY = 40;
+
+const colorMap = {
+    cyan: "#4de6d1",
+    green: "#7be495",
+    red: "#ff6b6b"
+};
+
 /*  маленькие графики  */
-function drawSmoothArea(canvas, color) {
+function drawSmoothArea(canvas, color, dataPoints = null) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
@@ -165,9 +180,15 @@ function drawSmoothArea(canvas, color) {
     const w = rect.width;
     const h = rect.height;
 
-    const points = Array.from({ length: 16 }, (_, i) =>
-        Math.sin(i * 0.6) * 0.25 + Math.random() * 0.15 + 0.45
-    );
+    ctx.clearRect(0, 0, w, h);
+
+    let points;
+    if (dataPoints && dataPoints.length > 0) {
+        const maxVal = Math.max(...dataPoints, 1);
+        points = dataPoints.map(v => (v / maxVal) * 0.8 + 0.1);
+    } else {
+        points = Array(16).fill(0.2);
+    }
 
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, color + "aa");
@@ -182,21 +203,20 @@ function drawSmoothArea(canvas, color) {
 
     ctx.lineTo(w, h);
     ctx.lineTo(0, h);
-    ctx.closePath(); /*  закрытие нахуй!!( пример) */
+    ctx.closePath();
 
     ctx.fillStyle = grad;
     ctx.fill();
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.stroke();
-    console.log(canvas.width, canvas.height, canvas.getBoundingClientRect());
+    // console.log('drawSmoothArea', canvas, rect.width, rect.height, dataPoints);
 }
 
-/* V ROT EBAAAAL !!!*/
-function drawBigChart() {
+/* большой график */
+function drawBigChart(dataPoints = null) {
     const canvas = document.getElementById("bigChart");
     if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
@@ -207,9 +227,15 @@ function drawBigChart() {
     const w = rect.width;
     const h = rect.height;
 
-    const data = Array.from({ length: 40 }, (_, i) =>
-        Math.sin(i / 3) * 25 + 45 + Math.random() * 6
-    );
+    ctx.clearRect(0, 0, w, h);
+
+    let data;
+    if (dataPoints && dataPoints.length > 0) {
+        const maxVal = Math.max(...dataPoints, 1);
+        data = dataPoints.map(v => (v / (maxVal || 100)) * 0.8 + 0.1);
+    } else {
+        data = Array(40).fill(0.3);
+    }
 
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, "#4de6d155");
@@ -218,7 +244,7 @@ function drawBigChart() {
     ctx.beginPath();
     data.forEach((v, i) => {
         const x = (i / (data.length - 1)) * w;
-        const y = h - (v / 90) * h;
+        const y = h - v * h;
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
 
@@ -232,3 +258,69 @@ function drawBigChart() {
     ctx.lineWidth = 2.5;
     ctx.stroke();
 }
+
+// рендер //
+async function fetchInitialData(serverId) {
+    console.log(`🔄 fetchInitialData для ${serverId}`);
+    const baseUrl = "http://127.0.0.1:8000";
+    try {
+        const cpuPromise = fetch(`${baseUrl}/container/${serverId}/cpu`)
+            .then(res => {
+                if (!res.ok) throw new Error(`CPU status ${res.status}`);
+                return res.json();
+            });
+        const uptimePromise = fetch(`${baseUrl}/container/${serverId}/uptime`)
+            .then(res => {
+                if (!res.ok) throw new Error(`Uptime status ${res.status}`);
+                return res.json();
+            });
+        const ipPromise = fetch(`${baseUrl}/container/${serverId}/ip`)
+            .then(res => {
+                if (!res.ok) throw new Error(`IP status ${res.status}`);
+                return res.json();
+            });
+
+        const [cpuData, uptimeData, ipData] = await Promise.all([cpuPromise, uptimePromise, ipPromise]);
+
+        console.log(' fetchInitialData выполнился для:', cpuData, uptimeData, ipData);
+        return {
+            cpu: cpuData.cpu_percent,
+            uptime: uptimeData.uptime,
+            ip: ipData,
+            containerId: serverId
+        };
+    } catch (err) {
+        console.error(' fetchInitialData ошибка:', err);
+        return null;
+    }
+}
+
+function updateUIText(metrics) {
+    const cpuCard = document.querySelector('[data-metric="cpu"] .h');
+    if (cpuCard) cpuCard.textContent = `${metrics.cpu.toFixed(2)}%`;
+
+    const uptimeCard = document.querySelector('[data-metric="server"] .value');
+    if (uptimeCard) uptimeCard.textContent = `Uptime: ${metrics.uptime}`;
+}
+
+function updateUI(metrics) {
+    console.log(' updateUI вызван с metrics:', metrics);
+    updateUIText(metrics);
+
+    if (typeof metrics.cpu === 'number') {
+        cpuHistory.push(metrics.cpu);
+        if (cpuHistory.length > MAX_HISTORY) cpuHistory.shift();
+
+        const cpuCanvas = document.querySelector('[data-metric="cpu"] canvas');
+        if (cpuCanvas) drawSmoothArea(cpuCanvas, colorMap.cyan, cpuHistory);
+
+        drawBigChart(cpuHistory);
+    }
+    console.log('cpuHistory', cpuHistory);
+}
+
+const button = document.getElementById("Stop");
+button.addEventListener("click", function(){
+    stopAutoUpdate();
+    console.log('Обновление остановлено');
+});

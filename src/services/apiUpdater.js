@@ -3,15 +3,13 @@ const BASE_URL = "http://127.0.0.1:8000";
 let intervalId = null;
 let currentContainerId = null;
 let currentRunId = null;
+let currentCallback = null;
 
+/**
+ * Запрашивает метрики контейнера.
+ */
 async function fetchMetrics(containerId, runId) {
-    console.log(`🔍 fetchMetrics вызван с containerId=${containerId}, runId=${runId}, currentRunId=${currentRunId}, currentContainerId=${currentContainerId}`);
-    
-    // Проверка актуальности
-    if (currentRunId !== runId || currentContainerId !== containerId) {
-        console.warn(`⚠️ ПРОПУСКАЕМ устаревший запрос для ${containerId} (runId=${runId}, currentRunId=${currentRunId})`);
-        return null;
-    }
+    console.log(`🔍 fetchMetrics вызван с containerId=${containerId}, runId=${runId}, currentRunId=${currentRunId}`);
 
     try {
         const [cpuRes, uptimeRes, ipRes] = await Promise.all([
@@ -19,6 +17,12 @@ async function fetchMetrics(containerId, runId) {
             fetch(`${BASE_URL}/container/${containerId}/uptime`),
             fetch(`${BASE_URL}/container/${containerId}/ip`)
         ]);
+
+        // Проверяем, не устарел ли запрос (runId мог измениться за время ожидания)
+        if (currentRunId !== runId || currentContainerId !== containerId) {
+            console.warn(`⚠️ Результат устарел для ${containerId} (runId=${runId}, currentRunId=${currentRunId})`);
+            return null;
+        }
 
         if (!cpuRes.ok || !uptimeRes.ok || !ipRes.ok) {
             throw new Error(`HTTP error: ${cpuRes.status}, ${uptimeRes.status}, ${ipRes.status}`);
@@ -41,8 +45,14 @@ async function fetchMetrics(containerId, runId) {
     }
 }
 
+/**
+ * Запускает периодическое обновление данных.
+ * Запросы выполняются каждые 3 секунды, не дожидаясь завершения предыдущих.
+ * Устаревшие результаты отбрасываются по runId.
+ */
 export function startAutoUpdate(containerId, callback) {
-    stopAutoUpdate(); // полностью останавливаем предыдущий запуск
+    // Полностью останавливаем предыдущий запуск
+    stopAutoUpdate();
 
     if (!containerId) {
         console.error('❌ containerId не указан');
@@ -52,30 +62,41 @@ export function startAutoUpdate(containerId, callback) {
     const runId = Date.now() + Math.random();
     currentRunId = runId;
     currentContainerId = containerId;
+    currentCallback = callback;
 
     console.log(`🚀 Запускаем обновление для контейнера ${containerId} (runId=${runId})`);
 
-    // Первый запрос сразу
-    fetchMetrics(containerId, runId).then(data => {
-        console.log(`🏁 Первый запрос завершён для runId=${runId}, data=`, data);
-        if (data && callback) callback(data);
-    });
+    // Функция, которая будет вызываться по интервалу
+    const poll = async () => {
+        // Если runId изменился (например, после остановки) – выходим
+        if (currentRunId !== runId || currentContainerId !== containerId) return;
 
-    intervalId = setInterval(async () => {
-        console.log(`🔄 Опрашиваем ${currentContainerId} (runId=${currentRunId})...`);
-        const data = await fetchMetrics(currentContainerId, currentRunId);
-        if (data && callback) callback(data);
-    }, 3000);
+        console.log(`🔄 Опрашиваем ${containerId} (runId=${runId})...`);
+        const data = await fetchMetrics(containerId, runId);
+        
+        // Проверяем актуальность после получения данных
+        if (data && currentRunId === runId && currentContainerId === containerId && currentCallback) {
+            currentCallback(data);
+        }
+    };
+
+    // Первый запрос сразу
+    poll();
+
+    // Запускаем интервал
+    intervalId = setInterval(poll, 3000);
 }
 
+/**
+ * Останавливает обновление.
+ */
 export function stopAutoUpdate() {
+    console.log(`⏹️ Останавливаем обновление для ${currentContainerId} (runId=${currentRunId})`);
     if (intervalId) {
-        console.log(`⏹️ Останавливаем интервал для ${currentContainerId} (runId=${currentRunId})`);
         clearInterval(intervalId);
         intervalId = null;
-        currentContainerId = null;
-        currentRunId = null;
-    } else {
-        console.log('⏸️ Интервал уже остановлен');
     }
+    currentContainerId = null;
+    currentRunId = null;
+    currentCallback = null;
 }

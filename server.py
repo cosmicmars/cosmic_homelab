@@ -17,18 +17,18 @@ DATA_FILE = Path("data.json")
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # конкретный домен нужен
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.middleware("http")
 async def add_cors_header(request, call_next):
     response = await call_next(request)
     response.headers["Access-Control-Allow-Origin"] = "*"
     return response
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 client = None
 
