@@ -22,10 +22,16 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = ["http://localhost:63342"],
-    allow_methods = ["*"],
-    allow_headers = ["*"],
+    allow_origins=["*"], # конкретный домен нужен
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_cors_header(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 client = None
 

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serverse - Homelab Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Inter', sans-serif; }
+        .status-green { box-shadow: 0 0 10px #00ffcc; }
+        .status-yellow { box-shadow: 0 0 10px #ffcc00; }
+        .status-red { box-shadow: 0 0 10px #ff4d4d; }
+        .card { background-color: #1a1a1a; border-radius: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.5); padding: 1rem; }
+        .table th, .table td { padding: 0.75rem 1rem; }
+        .hover-card:hover { transform: translateY(-3px); transition: 0.2s ease-in-out; cursor: pointer; }
+    </style>
+</head>
+<body class="p-6">
+<header class="hed">
+    <div class="left">
+        <span class="brand">Cosmic</span>
+    </div>
+
+    <nav class="nav">
+        <a class="active" href='../index.html'>Dashboard</a>
+        <a href="./server.html">Servers</a>
+        <a href="./container.html">Containers</a>
+        <a href="./alert.html">Alerts</a>
+        <a href="./logs.html">Logs</a>
+    </nav>
+
+    <div class="right">
+        <button class="settings">Settings</button>
+    </div>
+    <style>
+
+        :root {
+            --bg: #0b0d10;
+            --panel: #121418;
+            --border: rgba(255,255,255,0.08);
+
+            --cyan: #4de6d1;
+            --green: #7be495;
+            --red: #ff6b6b;
+
+            --text: #ffffff;
+            --muted: #9aa0aa;
+        }
+        /* ───────── ШАПКА ЕБАННАЯ СУКА ───────── */
+
+        .hed {
+            height: 64px;
+            padding: 0 32px;
+            display: flex;
+
+            align-items: center;
+
+
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+        }
+
+
+        .brand {
+            font-weight: 600;
+        }
+
+        .nav {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav a {
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 500;
+
+            position: relative;
+        }
+
+        .nav a.active {
+            color: var(--text);
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+
+        .nav a.active::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -22px;
+            width: 100%;
+            height: 2px;
+            background: var(--cyan);
+        }
+
+        .settings {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-weight: 500;
+        }</style>
+</header>
+
+
+<section class=" grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Example Server Card -->
+    <div class="card hover-card">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xl font-semibold">server-01.local</h2>
+            <span class="w-4 h-4 rounded-full status-green"></span>
+        </div>
+        <div class="flex justify-between text-sm mb-1">
+            <span>CPU: 34%</span>
+            <span>RAM: 65%</span>
+        </div>
+        <div class="flex justify-between text-sm mb-1">
+            <span>Disk: 72%</span>
+            <span>Uptime: 12d 4h</span>
+        </div>
+        <div class="text-xs text-gray-400">Last seen: 2026-01-31 10:12</div>
+    </div>
+
+    <div class="card hover-card">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xl font-semibold">server-02.local</h2>
+            <span class="w-4 h-4 rounded-full status-yellow"></span>
+        </div>
+        <div class="flex justify-between text-sm mb-1">
+            <span>CPU: 55%</span>
+            <span>RAM: 75%</span>
+        </div>
+        <div class="flex justify-between text-sm mb-1">
+            <span>Disk: 60%</span>
+            <span>Uptime: 7d 2h</span>
+        </div>
+        <div class="text-xs text-gray-400">Last seen: 2026-01-31 09:50</div>
+    </div>
+
+    <div class="card hover-card">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xl font-semibold">server-03.local</h2>
+            <span class="w-4 h-4 rounded-full status-red"></span>
+        </div>
+        <div class="flex justify-between text-sm mb-1">
+            <span>CPU: 90%</span>
+            <span>RAM: 95%</span>
+        </div>
+        <div class="flex justify-between text-sm mb-1">
+            <span>Disk: 85%</span>
+            <span>Uptime: 1d 5h</span>
+        </div>
+        <div class="text-xs text-gray-400">Last seen: 2026-01-31 10:15</div>
+    </div>
+</section>
+
+<section class="mt-12">
+    <h2 class="text-2xl font-semibold text-cyan-400 mb-4">Server Table View</h2>
+    <div class="overflow-x-auto">
+        <table class="table min-w-full border-collapse border border-gray-700">
+            <thead>
+            <tr class="text-left border-b border-gray-600">
+                <th>Hostname</th>
+                <th>Status</th>
+                <th>CPU %</th>
+                <th>RAM %</th>
+                <th>Disk %</th>
+                <th>Uptime</th>
+                <th>Last Seen</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr class="hover:bg-gray-800 cursor-pointer">
+                <td>server-01.local</td>
+                <td><span class="w-4 h-4 inline-block rounded-full status-green"></span></td>
+                <td>34%</td>
+                <td>65%</td>
+                <td>72%</td>
+                <td>12d 4h</td>
+                <td>2026-01-31 10:12</td>
+            </tr>
+            <tr class="hover:bg-gray-800 cursor-pointer">
+                <td>server-02.local</td>
+                <td><span class="w-4 h-4 inline-block rounded-full status-yellow"></span></td>
+                <td>55%</td>
+                <td>75%</td>
+                <td>60%</td>
+                <td>7d 2h</td>
+                <td>2026-01-31 09:50</td>
+            </tr>
+            <tr class="hover:bg-gray-800 cursor-pointer">
+                <td>server-03.local</td>
+                <td><span class="w-4 h-4 inline-block rounded-full status-red"></span></td>
+                <td>90%</td>
+                <td>95%</td>
+                <td>85%</td>
+                <td>1d 5h</td>
+                <td>2026-01-31 10:15</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serverse - Container Monitoring</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0a0a0a; color: #e0e0e0; font-family: 'Inter', sans-serif; }
+    .status-running { background-color: #00ff88; }
+    .status-stopped { background-color: #ff4d4d; }
+    .status-unhealthy { background-color: #ffcc00; }
+    .btn { padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; }
+    .btn-start { background-color: #00ff88; color: #0a0a0a; }
+    .btn-stop { background-color: #ff4d4d; color: #0a0a0a; }
+    .btn-restart { background-color: #00bfff; color: #0a0a0a; }
+    .hover-row:hover { background-color: #1a1a1a; cursor: pointer; }
+  </style>
+</head>
+<body class="p-6">
+<header class="hed">
+  <div class="left">
+    <span class="brand">Cosmic</span>
+  </div>
+
+  <nav class="nav">
+    <a class="active" href="../index.html">Dashboard</a>
+    <a href="./server.html">Servers</a>
+    <a href="./container.html">Containers</a>
+    <a href="./alert.html">Alerts</a>
+    <a href="./logs.html">Logs</a>
+  </nav>
+
+  <div class="right">
+    <button class="settings">Settings</button>
+  </div>
+  <style>
+
+    :root {
+      --bg: #0b0d10;
+      --panel: #121418;
+      --border: rgba(255,255,255,0.08);
+
+      --cyan: #4de6d1;
+      --green: #7be495;
+      --red: #ff6b6b;
+
+      --text: #ffffff;
+      --muted: #9aa0aa;
+    }
+    /* ───────── ШАПКА ЕБАННАЯ СУКА ───────── */
+
+    .hed {
+      height: 64px;
+      padding: 0 32px;
+      display: flex;
+
+      align-items: center;
+
+
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+    }
+
+
+    .brand {
+      font-weight: 600;
+    }
+
+    .nav {
+      display: flex;
+      gap: 32px;
+    }
+
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 500;
+
+      position: relative;
+    }
+
+    .nav a.active {
+      color: var(--text);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+
+    .nav a.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -22px;
+      width: 100%;
+      height: 2px;
+      background: var(--cyan);
+    }
+
+    .settings {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: white;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 500;
+    }</style>
+</header>
+
+<section class="mb-6">
+  <div class="flex gap-4 flex-wrap">
+    <select class="bg-gray-800 text-gray-200 p-2 rounded">
+      <option value="all">All Servers</option>
+      <option value="server1">server-01.local</option>
+      <option value="server2">server-02.local</option>
+    </select>
+    <select class="bg-gray-800 text-gray-200 p-2 rounded">
+      <option value="all">All Status</option>
+      <option value="running">Running</option>
+      <option value="stopped">Stopped</option>
+      <option value="unhealthy">Unhealthy</option>
+    </select>
+  </div>
+</section>
+
+<section>
+  <div class="overflow-x-auto">
+    <table class="table min-w-full border-collapse border border-gray-700">
+      <thead>
+      <tr class="text-left border-b border-gray-600">
+        <th>Container Name</th>
+        <th>Server</th>
+        <th>Status</th>
+        <th>CPU %</th>
+        <th>RAM %</th>
+        <th>Restarts</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr class="hover-row">
+        <td>web_app</td>
+        <td>server-01.local</td>
+        <td><span class="w-4 h-4 inline-block rounded-full status-running"></span> Running</td>
+        <td>23%</td>
+        <td>45%</td>
+        <td>2</td>
+        <td class="flex gap-1">
+          <button class="btn btn-start">Start</button>
+          <button class="btn btn-stop">Stop</button>
+          <button class="btn btn-restart">Restart</button>
+        </td>
+      </tr>
+      <tr class="hover-row">
+        <td>db_container</td>
+        <td>server-02.local</td>
+        <td><span class="w-4 h-4 inline-block rounded-full status-stopped"></span> Stopped</td>
+        <td>0%</td>
+        <td>0%</td>
+        <td>1</td>
+        <td class="flex gap-1">
+          <button class="btn btn-start">Start</button>
+          <button class="btn btn-stop">Stop</button>
+          <button class="btn btn-restart">Restart</button>
+        </td>
+      </tr>
+      <tr class="hover-row">
+        <td>cache_service</td>
+        <td>server-01.local</td>
+        <td><span class="w-4 h-4 inline-block rounded-full status-unhealthy"></span> Unhealthy</td>
+        <td>15%</td>
+        <td>30%</td>
+        <td>3</td>
+        <td class="flex gap-1">
+          <button class="btn btn-start">Start</button>
+          <button class="btn btn-stop">Stop</button>
+          <button class="btn btn-restart">Restart</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</body>
+</html>
