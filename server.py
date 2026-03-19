@@ -1,7 +1,7 @@
 import docker
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware  # Важно!
 from fastapi.responses import StreamingResponse
 from pathlib import Path
 import os
@@ -12,26 +12,29 @@ import json
 from pathlib import Path
 import httpx
 import asyncio
+import platform
 
-
-BASE_URL = "http://127.0.0.1:8000"  # или твой порт/хост
+BASE_URL = "http://127.0.0.1:8000"
 DATA_FILE = Path("data.json")
-
 
 app = FastAPI()
 
-@app.middleware("http")
-async def add_cors_header(request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    return response
-
+# ✅ ПРАВИЛЬНАЯ настройка CORS - только это, без ручного middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],  # Разрешаем все источники (для разработки)
+    allow_credentials=True,
+    allow_methods=["*"],  # Разрешаем все методы (GET, POST, DELETE и т.д.)
+    allow_headers=["*"],  # Разрешаем все заголовки
+    expose_headers=["*"],
 )
+
+# ❌ УДАЛИ этот middleware - он конфликтует с CORSMiddleware
+# @app.middleware("http")
+# async def add_cors_header(request, call_next):
+#     response = await call_next(request)
+#     response.headers["Access-Control-Allow-Origin"] = "*"
+#     return response
 
 client = None
 
@@ -40,10 +43,16 @@ def save_data(data: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 def find_docker():
+    """Поиск Docker сокета для разных ОС"""
+    if platform.system() == "Windows":
+        try:
+            return docker.from_env()
+        except:
+            return None
+    
     paths = [
         "/var/run/docker.sock",
         str(Path.home() / "Library/Containers/com.docker.docker/Data/docker.sock"),
-        str(Path.home() / "Library/Containers/com.docker.docker/Data/docker.raw.sock"),
         str(Path.home() / ".docker/run/docker.sock")
     ]
     
@@ -59,9 +68,7 @@ def find_docker():
     try:
         return docker.from_env()
     except:
-        pass
-    
-    return None
+        return None
 
 client = find_docker()
 
@@ -90,150 +97,186 @@ def get_images():
 @app.get("/container/{container_id}/ip")
 def get_ip(container_id: str):
     check_docker()
-    c = client.containers.get(container_id)
-    networks = c.attrs["NetworkSettings"]["Networks"]
-    return {net: data.get("IPAddress", "No IP") for net, data in networks.items()}
+    try:
+        c = client.containers.get(container_id)
+        networks = c.attrs["NetworkSettings"]["Networks"]
+        return {net: data.get("IPAddress", "No IP") for net, data in networks.items()}
+    except docker.errors.NotFound:
+        raise HTTPException(status_code=404, detail="Container not found")
 
 @app.get("/create")
 def create_container(name: str, image: str = "ubuntu", cmd: str = "sleep 3600"):
     check_docker()
     try:
-        client.images.get(image)
-    except:
-        client.images.pull(image)
-    
-    c = client.containers.run(image, cmd.split(), name=name, detach=True)
-    
-    return {"status": "created", "id": c.short_id, "name": name}
-@app.get("/remove")
+        try:
+            client.images.get(image)
+        except:
+            client.images.pull(image)
+        
+        c = client.containers.run(image, cmd.split(), name=name, detach=True)
+        return {"status": "created", "id": c.short_id, "name": name}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/remove/{name}")
 def remove_container(name: str):
     check_docker()
-    c = client.containers.get(name)
-    c.remove(force=True)
-    return {"status": "removed"}
+    try:
+        c = client.containers.get(name)
+        c.remove(force=True)
+        return {"status": "removed", "name": name}
+    except docker.errors.NotFound:
+        raise HTTPException(status_code=404, detail="Container not found")
 
 def _get_cpu_percent(container, interval: float = 1.0) -> float:
-    s1 = container.stats(stream=False)
-    time.sleep(interval)
-    s2 = container.stats(stream=False)
-
-    cpu_delta = (
-        s2["cpu_stats"]["cpu_usage"]["total_usage"]
-        - s1["cpu_stats"]["cpu_usage"]["total_usage"]
-    )
-    system_delta = (
-        s2["cpu_stats"]["system_cpu_usage"]
-        - s1["cpu_stats"]["system_cpu_usage"]
-    )
-
-    if cpu_delta <= 0 or system_delta <= 0:
+    if container.status != "running":
         return 0.0
+    
+    try:
+        s1 = container.stats(stream=False)
+        time.sleep(interval)
+        s2 = container.stats(stream=False)
 
-    percpu = s2["cpu_stats"]["cpu_usage"].get("percpu_usage") or []
-    num_cpus = len(percpu) or 1
-    return cpu_delta / system_delta * num_cpus * 100.0
+        cpu_delta = (
+            s2["cpu_stats"]["cpu_usage"]["total_usage"]
+            - s1["cpu_stats"]["cpu_usage"]["total_usage"]
+        )
+        system_delta = (
+            s2["cpu_stats"]["system_cpu_usage"]
+            - s1["cpu_stats"]["system_cpu_usage"]
+        )
 
+        if cpu_delta <= 0 or system_delta <= 0:
+            return 0.0
+
+        percpu = s2["cpu_stats"]["cpu_usage"].get("percpu_usage") or []
+        num_cpus = len(percpu) or 1
+        return cpu_delta / system_delta * num_cpus * 100.0
+    except:
+        return 0.0
 
 @app.get("/container/{container_id}/cpu")
 def get_cpu(container_id: str):
     check_docker()
-    c = client.containers.get(container_id)
-    if c.status != "running":
-        return {"cpu_percent": 0.0}
-    cpu_percent = _get_cpu_percent(c, interval=0.5)
-    return {"cpu_percent": round(cpu_percent, 2)}
+    try:
+        c = client.containers.get(container_id)
+        cpu_percent = _get_cpu_percent(c, interval=0.5)
+        return {"cpu_percent": round(cpu_percent, 2)}
+    except docker.errors.NotFound:
+        raise HTTPException(status_code=404, detail="Container not found")
 
 @app.get("/container/{container_id}/uptime")
 def get_uptime(container_id: str):
     check_docker()
-    c = client.containers.get(container_id)
-    info = c.attrs
-    started_at = info["State"].get("StartedAt")
-    if not started_at or c.status != "running":
-        return {"uptime": "0s"}
-    s = started_at
-    if s.endswith("Z"):
-        s = s[:-1] + "+00:00"
-
-    # если есть точка, режем микросекунды до 6 знаков
-    if "." in s:
-        date_part, rest = s.split(".", 1)      # '2026-02-05T13:46:17', '111860135+00:00'
-        frac, tz = rest.split("+", 1)          # '111860135', '00:00'
-        frac = frac[:6]                        # '111860'
-        s = f"{date_part}.{frac}+{tz}"
-
-    started_dt = datetime.datetime.fromisoformat(s)
-    now = datetime.datetime.now(datetime.timezone.utc)
-    delta = now - started_dt
-
-    seconds = int(delta.total_seconds())
-    days, seconds = divmod(seconds, 86400)
-    hours, seconds = divmod(seconds, 3600)
-    minutes, seconds = divmod(seconds, 60)
-
-    parts = []
-    if days:
-        parts.append(f"{days}d")
-    if hours:
-        parts.append(f"{hours}h")
-    if minutes:
-        parts.append(f"{minutes}m")
-    if seconds or not parts:
-        parts.append(f"{seconds}s")
-
-    return {"uptime": " ".join(parts)}
+    try:
+        c = client.containers.get(container_id)
+        if c.status != "running":
+            return {"uptime": "0s", "status": c.status}
+        
+        info = c.attrs
+        started_at = info["State"].get("StartedAt")
+        if not started_at:
+            return {"uptime": "unknown"}
+        
+        # Парсим время
+        if started_at.endswith("Z"):
+            started_at = started_at[:-1] + "+00:00"
+        
+        if "." in started_at:
+            date_part, rest = started_at.split(".", 1)
+            if "+" in rest:
+                frac, tz = rest.split("+", 1)
+                frac = frac[:6]
+                started_at = f"{date_part}.{frac}+{tz}"
+            else:
+                started_at = date_part
+        
+        started_dt = datetime.datetime.fromisoformat(started_at)
+        now = datetime.datetime.now(datetime.timezone.utc)
+        delta = now - started_dt
+        
+        seconds = int(delta.total_seconds())
+        days, seconds = divmod(seconds, 86400)
+        hours, seconds = divmod(seconds, 3600)
+        minutes, seconds = divmod(seconds, 60)
+        
+        parts = []
+        if days:
+            parts.append(f"{days}d")
+        if hours:
+            parts.append(f"{hours}h")
+        if minutes:
+            parts.append(f"{minutes}m")
+        if seconds or not parts:
+            parts.append(f"{seconds}s")
+        
+        return {"uptime": " ".join(parts)}
+    except docker.errors.NotFound:
+        raise HTTPException(status_code=404, detail="Container not found")
 
 @app.get("/host/temperature")
 def get_host_temperature():
-    # temps = psutil.sensors_temperatures(fahrenheit=False)
-    # result = {}
-    # for name, entries in temps.items():
-    #     result[name] = [
-    #         {"label": e.label or "", "current": e.current}
-    #         for e in entries
-    #     ]
-    # return result
-    pass
+    try:
+        temps = psutil.sensors_temperatures()
+        if not temps:
+            return {"message": "Temperature sensors not available"}
+        
+        result = {}
+        for name, entries in temps.items():
+            result[name] = [
+                {"label": e.label or "", "current": e.current}
+                for e in entries
+            ]
+        return result
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/collect/{container_id}")
-def collect_via_api(container_id: str):
-    client_http = httpx.Client(base_url=BASE_URL, timeout=10.0)
-
-    home_data = client_http.get("/").json()
-    images = client_http.get("/images").json()
-
-    cid = container_id
-
-    ips = client_http.get(f"/container/{cid}/ip").json()
-    cpu = client_http.get(f"/container/{cid}/cpu").json()
-    uptime = client_http.get(f"/container/{cid}/uptime").json()
-
-    data = {
-        "home": home_data,
-        "images": images,
-        "container_id": cid,
-        "container_ip": ips,
-        "container_cpu": cpu,
-        "container_uptime": uptime,
-    }
-
-    save_data(data)
-    return data
-
-# ТЕСТ ТРАНСЛЯЦИИ 
+async def collect_via_api(container_id: str):
+    async with httpx.AsyncClient(base_url=BASE_URL, timeout=10.0) as client_http:
+        try:
+            home_data = await client_http.get("/")
+            images = await client_http.get("/images")
+            ips = await client_http.get(f"/container/{container_id}/ip")
+            cpu = await client_http.get(f"/container/{container_id}/cpu")
+            uptime = await client_http.get(f"/container/{container_id}/uptime")
+            
+            data = {
+                "home": home_data.json() if home_data.status_code == 200 else {"error": "Failed"},
+                "images": images.json() if images.status_code == 200 else [],
+                "container_id": container_id,
+                "container_ip": ips.json() if ips.status_code == 200 else {},
+                "container_cpu": cpu.json() if cpu.status_code == 200 else {},
+                "container_uptime": uptime.json() if uptime.status_code == 200 else {},
+            }
+            
+            save_data(data)
+            return data
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/sse/container/{container_id}/uptime")
 async def stream_uptime(container_id: str, request: Request):
     async def generate():
         while not await request.is_disconnected():
             try:
-                data = get_uptime(container_id)  # твоя существующая функция
-                yield f"data: {json.dumps(data)}\n\n"
-            except:
-                yield f"data: {json.dumps({'error': 'Ошибка'})}\n\n"
+                data = get_uptime(container_id)
+                yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
             await asyncio.sleep(2)
     
-    return StreamingResponse(generate(), media_type="text/event-stream")
+    return StreamingResponse(
+        generate(), 
+        media_type="text/event-stream",
+        headers={
+            "Access-Control-Allow-Origin": "*",  # Явно добавляем CORS для SSE
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
 
 if __name__ == "__main__":
+    print("🚀 Запуск на http://localhost:8000")
+    print(f"🐳 Docker доступен: {client is not None}")
     uvicorn.run(app, host="0.0.0.0", port=8000)
