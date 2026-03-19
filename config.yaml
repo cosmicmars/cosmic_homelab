@@ -1,0 +1,5 @@
+server:
+  host: http://127.0.0.1
+  port: 8080
+ui:
+  welcome_ascii: ""
