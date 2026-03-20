@@ -215,6 +215,8 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    margin-top: 5vh;
+
 }
 
 .h {
@@ -359,6 +361,7 @@ body {
     cursor: pointer;
     backdrop-filter: blur(6px);
     transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.25s ease;
+    margin-top: 3vh;
 }
 
 #openServerModal:hover {

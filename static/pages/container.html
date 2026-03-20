@@ -1,31 +1,342 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/container.css">
-    <link rel="stylesheet" href="/static/stil.css">
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Cosmic — Управление контейнерами</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Дополнительные стили для страницы контейнеров */
+        .containers-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .hedir {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .refresh-btn {
+            background: rgba(77, 230, 209, 0.1);
+            border: 1px solid rgba(77, 230, 209, 0.3);
+            color: var(--cyan);
+            padding: 8px 20px;
+            border-radius: 999px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(77, 230, 209, 0.2);
+            border-color: var(--cyan);
+            transform: scale(0.98);
+        }
+
+        /* Сетка контейнеров */
+        .containers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 1rem;
+        }
+
+        /* Карточка контейнера */
+        .container-card {
+            background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.06), transparent 70%), var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(2px);
+        }
+
+        .container-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--cyan);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .container-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff, var(--cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .container-id {
+            font-family: monospace;
+            font-size: 0.7rem;
+            background: rgba(255,255,255,0.05);
+            padding: 2px 8px;
+            border-radius: 20px;
+            color: var(--muted);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-running {
+            background: rgba(123, 228, 149, 0.15);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        .status-exited {
+            background: rgba(255, 107, 107, 0.15);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+
+        .status-created {
+            background: rgba(77, 230, 209, 0.15);
+            color: var(--cyan);
+            border: 1px solid var(--cyan);
+        }
+
+        .status-other {
+            background: rgba(255,255,255,0.05);
+            color: var(--muted);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        .action-btn {
+            width: auto;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .action-btn.start {
+            color: var(--green);
+        }
+        .action-btn.start:hover {
+            background: rgba(123, 228, 149, 0.15);
+            border-color: var(--green);
+        }
+
+        .action-btn.stop {
+            color: var(--red);
+        }
+        .action-btn.stop:hover {
+            background: rgba(255, 107, 107, 0.15);
+            border-color: var(--red);
+        }
+
+        .action-btn.restart {
+            color: var(--cyan);
+        }
+        .action-btn.restart:hover {
+            background: rgba(77, 230, 209, 0.15);
+            border-color: var(--cyan);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .containers-grid {
+                grid-template-columns: 1fr;
+            }
+            .action-buttons {
+                justify-content: center;
+            }
+            .hedir {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
 </head>
 <body>
     <header class="hed">
-    <div class="left">
-        <span class="brand">Cosmic</span>
-    </div>
+        <div class="left">
+            <span class="brand">Cosmic</span>
+        </div>
+        <nav class="nav">
+            <a href="/static/index.html">Dashboard</a>
+            <a href="server.html">Servers</a>
+            <a class="active" href="container.html">Containers</a>
+            <a href="alert.html">Alerts</a>
+            <a href="logs.html">Logs</a>
+        </nav>
+        <div class="right">
+            <button class="settings">Settings</button>
+        </div>
+    </header>
 
-    <nav class="nav">
-        <a  href="/static/index.html">Dashboard</a>
-        <a href="server.html">Servers</a>
-        <a class="active" href="container.html">Containers</a>
-        <a href="alert.html">Alerts</a>
-        <a href="logs.html">Logs</a>
-    </nav>
+    <main class="wrap">
+        <div class="containers-wrapper">
+            <div class="hedir">
+                <h1 class="h h-pr">📦 Docker Containers</h1>
+                <button id="refreshContainersBtn" class="refresh-btn">🔄 Refresh list</button>
+            </div>
+            <div id="containersList" class="containers-grid">
+                <div class="loading">Loading containers...</div>
+            </div>
+        </div>
+        <!-- Скрытые элементы для совместимости с общим скриптом -->
+        <pre id="status" style="display:none;"></pre>
+        <pre id="containers" style="display:none;"></pre>
+        <pre id="temperature" style="display:none;"></pre>
+        <pre id="images" style="display:none;"></pre>
+        <pre id="containerInfo" style="display:none;"></pre>
+        <pre id="createResult" style="display:none;"></pre>
+        <pre id="removeResult" style="display:none;"></pre>
+    </main>
 
-    <div class="right">
-        <button class="settings">Settings</button>
-    </div>
-</header>
-<canvas id="starsCanvas"></canvas>
+    <canvas id="starsCanvas"></canvas>
+
+    <script type="module">
+        const API_BASE = 'http://127.0.0.1:8000';
+
+        const containersDiv = document.getElementById('containersList');
+        const refreshBtn = document.getElementById('refreshContainersBtn');
+
+        async function fetchContainers() {
+            containersDiv.innerHTML = '<div class="loading">⏳ Loading containers...</div>';
+            try {
+                const response = await fetch(`${API_BASE}/containers`);
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                const containers = await response.json();
+                renderContainers(containers);
+            } catch (error) {
+                console.error('Failed to fetch containers:', error);
+                containersDiv.innerHTML = `<div class="loading" style="color: var(--red);">❌ Error loading containers: ${error.message}</div>`;
+            }
+        }
+
+        async function performAction(containerId, action) {
+            // Маппинг действий на эндпоинты (в зависимости от вашего бэкенда)
+            let endpoint = '';
+            if (action === 'start') endpoint = `/containers/${containerId}/start`;
+            else if (action === 'stop') endpoint = `/containers/${containerId}/stop`;
+            else if (action === 'restart') endpoint = `/containers/${containerId}/restart`;
+            else return;
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, { method: 'POST' });
+                if (!response.ok) throw new Error(`Failed to ${action} container`);
+                // После действия обновляем список контейнеров
+                await fetchContainers();
+            } catch (error) {
+                console.error(`Error ${action} container ${containerId}:`, error);
+                alert(`Failed to ${action} container: ${error.message}`);
+            }
+        }
+
+        function getStatusClass(status) {
+            const st = (status || '').toLowerCase();
+            if (st === 'running') return 'status-running';
+            if (st === 'exited') return 'status-exited';
+            if (st === 'created' || st === 'restarting') return 'status-created';
+            return 'status-other';
+        }
+
+        function renderContainers(containers) {
+            if (!containers || containers.length === 0) {
+                containersDiv.innerHTML = '<div class="loading">✨ No containers found.</div>';
+                return;
+            }
+
+            containersDiv.innerHTML = '';
+            containers.forEach(container => {
+                const card = document.createElement('div');
+                card.className = 'container-card';
+
+                const containerId = container.id || '';
+                const shortId = containerId.length > 12 ? containerId.substring(0, 12) : containerId;
+                const name = container.name || 'Unnamed';
+                const status = container.status || 'unknown';
+                const statusClass = getStatusClass(status);
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div>
+                            <div class="container-name">${escapeHtml(name)}</div>
+                            <div class="container-id">${escapeHtml(shortId)}</div>
+                        </div>
+                        <div>
+                            <span class="status-badge ${statusClass}">● ${escapeHtml(status)}</span>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn start" data-id="${escapeAttr(containerId)}" data-action="start">▶ Start</button>
+                        <button class="action-btn stop" data-id="${escapeAttr(containerId)}" data-action="stop">■ Stop</button>
+                        <button class="action-btn restart" data-id="${escapeAttr(containerId)}" data-action="restart">↻ Restart</button>
+                    </div>
+                `;
+
+                containersDiv.appendChild(card);
+            });
+
+            // Навешиваем обработчики после вставки в DOM
+            document.querySelectorAll('.action-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const containerId = btn.getAttribute('data-id');
+                    const action = btn.getAttribute('data-action');
+                    if (containerId && action) performAction(containerId, action);
+                });
+            });
+        }
+
+        // Утилиты для экранирования (безопасный вывод)
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        function escapeAttr(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        refreshBtn.addEventListener('click', fetchContainers);
+        fetchContainers();
+    </script>
     <script type="module" src="/static/scr.js"></script>
 </body>
 </html>
