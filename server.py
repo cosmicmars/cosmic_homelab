@@ -299,5 +299,26 @@ async def stream_uptime(container_id: str, request: Request):
         }
     )
 
+@app.get("/sse/container/{container_id}/logs")
+async def stream_logs(container_id: str, request: Request):
+    async def generate():
+        container = docker.from_env().containers.get(container_id)
+        for log_line in container.logs(stream=True, follow=True, timestamps=True):
+            if await request.is_disconnected():
+                break
+            yield f"data: {log_line.decode('utf-8').rstrip()}\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=1366)
