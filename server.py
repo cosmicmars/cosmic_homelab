@@ -1,10 +1,14 @@
+from xxlimited_35 import Null
+
 import docker
 import uvicorn
+from dotenv.main import with_warn_for_invalid_lines
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware  # Важно!
 from fastapi.responses import StreamingResponse
 from pathlib import Path
 import os
+import yaml
 import datetime
 import time
 import psutil
@@ -14,8 +18,12 @@ import httpx
 import asyncio
 import platform
 
-BASE_URL = "http://127.0.0.1:8000"
+with open('config.yaml', 'r', encoding='utf-8') as file:
+    load_yaml = yaml.safe_load(file)
+
+BASE_URL = load_yaml['server']['host']
 DATA_FILE = Path("data.json")
+print(load_yaml['ui']['welcome_ascii'])
 
 app = FastAPI()
 
@@ -29,12 +37,6 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# ❌ УДАЛИ этот middleware - он конфликтует с CORSMiddleware
-# @app.middleware("http")
-# async def add_cors_header(request, call_next):
-#     response = await call_next(request)
-#     response.headers["Access-Control-Allow-Origin"] = "*"
-#     return response
 
 client = None
 
@@ -264,10 +266,10 @@ async def stream_uptime(container_id: str, request: Request):
                 yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
             except Exception as e:
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
-            await asyncio.sleep(2)
-    
+            await asyncio.sleep(1)
+
     return StreamingResponse(
-        generate(), 
+        generate(),
         media_type="text/event-stream",
         headers={
             "Access-Control-Allow-Origin": "*",  # Явно добавляем CORS для SSE
@@ -276,7 +278,47 @@ async def stream_uptime(container_id: str, request: Request):
         }
     )
 
+@app.get("/sse/container/{container_id}/cpu")
+async def stream_uptime(container_id: str, request: Request):
+    async def generate():
+        while not await request.is_disconnected():
+            try:
+                datacpu = get_cpu(container_id)
+                yield f"data: {json.dumps(datacpu, ensure_ascii=False)}\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            await asyncio.sleep(1)
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Access-Control-Allow-Origin": "*",  # Явно добавляем CORS для SSE
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+@app.get("/sse/container/{container_id}/logs")
+async def stream_logs(container_id: str, request: Request):
+    async def generate():
+        container = docker.from_env().containers.get(container_id)
+        for log_line in container.logs(stream=True, follow=True, timestamps=True):
+            if await request.is_disconnected():
+                break
+            yield f"data: {log_line.decode('utf-8').rstrip()}\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+
+
 if __name__ == "__main__":
-    print("🚀 Запуск на http://localhost:8000")
-    print(f"🐳 Docker доступен: {client is not None}")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=1366)
