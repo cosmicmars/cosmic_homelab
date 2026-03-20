@@ -3,3 +3,5 @@ uvicorn[standard]
 fastapi
 psutil
 httpx
+io
+tempfile
