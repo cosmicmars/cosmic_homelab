@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <header class="hed">
+    <div class="left">
+        <span class="brand">Cosmic</span>
+    </div>
+
+    <nav class="nav">
+        <a href="/static/index.html">Dashboard</a>
+        <a class="active" href="server.html">Servers</a>
+        <a href="container.html">Containers</a>
+        <a href="alert.html">Alerts</a>
+        <a href="logs.html">Logs</a>
+    </nav>
+
+    <div class="right">
+        <button class="settings">Settings</button>
+    </div>
+</header>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐳 Docker API Admin Panel</title>
+    <link rel="stylesheet" href="css/server.css" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>
+            🐳 Docker API Control Panel
+            <span id="apiStatus" class="offline">Проверка...</span>
+        </h1>
+        <div class="subtitle">  
+            Полный интерфейс для управления Docker контейнерами через API
+            <span style="margin-left: 16px; color: #3b82f6;">http://localhost:8000</span>
+        </div>
+
+        <div class="grid" id="cardsGrid"></div>
+
+        <div class="sse-section">
+            <h3 style="margin-bottom: 16px;">📡 SSE Stream (Live Updates)</h3>
+            <div class="sse-container">
+                <div class="sse-controls">
+                    <div class="param-group">
+                        <label class="param-label">Container ID для стрима uptime:</label>
+                        <div class="flex-row">
+                            <input type="text" id="sseContainerId" placeholder="Введите container ID" value="test_container" style="flex: 1;">
+                            <button id="startSseBtn" class="btn-secondary">▶ Старт</button>
+                            <button id="stopSseBtn" class="btn-danger">⏹ Стоп</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sse-stream" id="sseStream">
+                    <div style="color: #6b7280; text-align: center;">SSE stream не активен</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <canvas id="starsCanvas"></canvas>
+    <script type="module" src="js/server.js"></script>
+    <script type="module" src="/static/scr.js"></script>
+</body>
+</html>

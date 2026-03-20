@@ -4,16 +4,17 @@
     "docker": true
   },
   "images": [
+    "my-python-downloader:latest",
     "ubuntu:latest"
   ],
-  "container_id": "test_container",
+  "container_id": "046246b5f912",
   "container_ip": {
     "bridge": "172.17.0.2"
   },
   "container_cpu": {
-    "cpu_percent": 0.0
+    "cpu_percent": 0.01
   },
   "container_uptime": {
-    "uptime": "17s"
+    "uptime": "17m 18s"
   }
 }
