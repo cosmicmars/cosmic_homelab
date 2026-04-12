@@ -12,6 +12,7 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 1rem;
+            z-index: -2;
         }
 
         .hedir {
@@ -21,6 +22,7 @@
             flex-wrap: wrap;
             gap: 1rem;
             margin-bottom: 2rem;
+            z-index: -2;
         }
 
         .refresh-btn {
@@ -45,6 +47,7 @@
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 24px;
             margin-top: 1rem;
+            z-index: -2;
         }
 
         /* Карточка контейнера */
@@ -55,6 +58,7 @@
             padding: 20px;
             transition: transform 0.2s, box-shadow 0.2s;
             backdrop-filter: blur(2px);
+            z-index: -2;
         }
 
         .container-card:hover {
@@ -70,6 +74,7 @@
             margin-bottom: 16px;
             flex-wrap: wrap;
             gap: 8px;
+            z-index: -2;
         }
 
         .container-name {
@@ -84,7 +89,6 @@
         .container-id {
             font-family: monospace;
             font-size: 0.7rem;
-            background: rgba(255,255,255,0.05);
             padding: 2px 8px;
             border-radius: 20px;
             color: var(--muted);
@@ -102,9 +106,9 @@
         }
 
         .status-running {
-            background: rgba(123, 228, 149, 0.15);
             color: var(--green);
             border: 1px solid var(--green);
+            z-index: -2;
         }
 
         .status-exited {
@@ -114,7 +118,6 @@
         }
 
         .status-created {
-            background: rgba(77, 230, 209, 0.15);
             color: var(--cyan);
             border: 1px solid var(--cyan);
         }
