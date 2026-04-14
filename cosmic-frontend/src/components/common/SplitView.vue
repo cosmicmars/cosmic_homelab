@@ -1,200 +1,155 @@
 <template>
   <div class="split-view" :class="{ 'dragging': draggingType }">
-    <div v-if="panels.length === 0 && draggingType" class="empty-drop-zone" @drop.prevent="onDropEmpty" @dragover.prevent>
+    <template v-for="(panel, index) in modelValue" :key="panel.id">
+      <NodeView
+        :panel="panel"
+        :dragging-type="draggingType"
+        :total-panels="modelValue.length"
+        :index="index"
+        :is-last="index === modelValue.length - 1"
+        @add-panel="handleAddPanel"
+        @close="handleClose"
+        @resize-start="onResizeStart"
+      />
+    </template>
+    <div v-if="modelValue.length === 0 && draggingType" class="empty-drop-zone" @drop.prevent="onDropEmpty" @dragover.prevent>
       Перетащите сюда
     </div>
-    <template v-else>
-      <template v-for="(panel, index) in panels" :key="panel.id">
-        <NodeView
-          :node="wrapPanel(panel)"
-          :dragging-type="draggingType"
-          :total-leaves="panels.length"
-          :style="getPanelStyle(panel)"
-          @add-panel="handleAddPanel"
-          @close="handleClose"
-          @resize="(size) => handleResize({ panelId: panel.id, newSize: size })"
-        />
-        <div
-          v-if="index < panels.length - 1"
-          class="resizer horizontal"
-          @mousedown="startResize($event, index)"
-        ></div>
-      </template>
-    </template>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { onBeforeUnmount } from 'vue'
 import NodeView from './NodeView.vue'
 
 const props = defineProps({
-  modelValue: { type: Array, required: true }, // плоский массив панелей
+  modelValue: { type: Array, required: true },
   draggingType: { type: String, default: null }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
-const panels = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
-})
-
-const totalLeaves = computed(() => panels.value.length)
+const MAX_PANELS = 4
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 }
 
-const startResize = (e, index) => {
-  e.preventDefault()
-  const startX = e.clientX
-  const panel1 = panels.value[index]
-  const panel2 = panels.value[index + 1]
-  const startSize1 = panel1.size
-  const startSize2 = panel2.size
-
-  const onMouseMove = (moveEvent) => {
-    const dx = moveEvent.clientX - startX
-    const containerWidth = e.currentTarget.parentNode.clientWidth
-    const deltaPercent = (dx / containerWidth) * 100
-
-    let newSize1 = startSize1 + deltaPercent
-    let newSize2 = startSize2 - deltaPercent
-
-    newSize1 = Math.max(10, Math.min(90, newSize1))
-    newSize2 = 100 - newSize1 // сумма должна быть 100
-
-    const updatedPanels = [...panels.value]
-    updatedPanels[index] = { ...panel1, size: newSize1 }
-    updatedPanels[index + 1] = { ...panel2, size: newSize2 }
-    panels.value = updatedPanels
-  }
-
-  const onMouseUp = () => {
-    window.removeEventListener('mousemove', onMouseMove)
-    window.removeEventListener('mouseup', onMouseUp)
-  }
-
-  window.addEventListener('mousemove', onMouseMove)
-  window.addEventListener('mouseup', onMouseUp)
+function redistributeSizes(panels) {
+  const count = panels.length
+  if (count === 0) return panels
+  const equalSize = 100 / count
+  return panels.map(p => ({ ...p, size: equalSize }))
 }
 
-// Оборачиваем панель в формат, который ожидает NodeView
-function wrapPanel(panel) {
-  return {
-    type: 'leaf',
-    id: panel.id,
-    leafType: panel.type,
-    size: panel.size
-  }
-}
+const handleAddPanel = ({ type, targetId, position }) => {
+  if (props.modelValue.length >= MAX_PANELS) return
 
-function getPanelStyle(panel) {
-  return {
-    flex: `0 0 ${panel.size}%`
-  }
-}
-
-// Добавление панели с указанием позиции относительно существующей
-function addPanel(type, targetId, position) {
-  if (panels.value.length >= 4) return
+  const targetIndex = props.modelValue.findIndex(p => p.id === targetId)
+  if (targetIndex === -1) return
 
   const newPanel = {
     id: generateId(),
     type,
-    size: null // временно
+    size: null
   }
 
-  let newPanels = [...panels.value]
-
-  if (newPanels.length === 0) {
-    newPanel.size = 100
-    newPanels = [newPanel]
-  } else if (newPanels.length === 1) {
-    const existing = newPanels[0]
-    if (position === 'left' || position === 'right') {
-      existing.size = 50
-      newPanel.size = 50
-      newPanels = position === 'left' ? [newPanel, existing] : [existing, newPanel]
-    } else {
-      // вертикальное разделение пока не поддерживаем, можно добавить позже
-      existing.size = 50
-      newPanel.size = 50
-      newPanels = [existing, newPanel]
-    }
-  } else {
-    // Находим индекс целевой панели
-    const targetIndex = newPanels.findIndex(p => p.id === targetId)
-    if (targetIndex === -1) return
-
-    const target = newPanels[targetIndex]
-    const splitRatio = 0.5 // делим поровну
-    const newSize = target.size * splitRatio
-    target.size = target.size - newSize
-    newPanel.size = newSize
-
-    if (position === 'left' || position === 'top') {
-      newPanels.splice(targetIndex, 0, newPanel)
-    } else {
-      newPanels.splice(targetIndex + 1, 0, newPanel)
-    }
-
-    // Перераспределяем размеры внутри группы? Пока считаем, что остальные панели не меняют размер
-    // Это упрощённо, но работает для горизонтального стека
-  }
-
-  panels.value = newPanels
+  let newPanels = [...props.modelValue]
+  const insertIndex = (position === 'left' || position === 'top') ? targetIndex : targetIndex + 1
+  newPanels.splice(insertIndex, 0, newPanel)
+  newPanels = redistributeSizes(newPanels)
+  emit('update:modelValue', newPanels)
 }
 
-const handleAddPanel = ({ type, targetNode, position }) => {
-  addPanel(type, targetNode.id, position)
-}
-
-const handleClose = (leafId) => {
-  let newPanels = panels.value.filter(p => p.id !== leafId)
-  if (newPanels.length > 0) {
-    const totalSize = newPanels.reduce((sum, p) => sum + p.size, 0)
-    const scale = 100 / totalSize
-    newPanels = newPanels.map(p => ({ ...p, size: p.size * scale }))
-  }
-  panels.value = newPanels
-}
-
-const handleResize = ({ panelId, newSize }) => {
-  const index = panels.value.findIndex(p => p.id === panelId)
-  if (index === -1) return
-  const panel = panels.value[index]
-  const oldSize = panel.size
-  const delta = newSize - oldSize
-
-  // Найдём соседнюю панель, с которой делим пространство
-  let neighbourIndex = index + 1
-  if (neighbourIndex >= panels.value.length) neighbourIndex = index - 1
-  if (neighbourIndex < 0) return
-
-  const neighbour = panels.value[neighbourIndex]
-  const newNeighbourSize = neighbour.size - delta
-  if (newNeighbourSize < 10 || newSize < 10) return
-
-  const updatedPanels = [...panels.value]
-  updatedPanels[index] = { ...panel, size: newSize }
-  updatedPanels[neighbourIndex] = { ...neighbour, size: newNeighbourSize }
-  panels.value = updatedPanels
+const handleClose = (panelId) => {
+  if (props.modelValue.length <= 1) return
+  let newPanels = props.modelValue.filter(p => p.id !== panelId)
+  newPanels = redistributeSizes(newPanels)
+  emit('update:modelValue', newPanels)
 }
 
 const onDropEmpty = (e) => {
   const type = e.dataTransfer.getData('text/plain')
   if (!type) return
-  addPanel(type, null, 'right')
+  emit('update:modelValue', [{ id: generateId(), type, size: 100 }])
 }
+
+let resizing = false
+let panel1 = null
+let panel2 = null
+let startSize1 = 0
+let startSize2 = 0
+let startCoord = 0
+let containerSize = 0
+let isHorizontal = true
+
+const onResizeStart = ({ index, direction }) => {
+  if (index < 0 || index >= props.modelValue.length - 1) return
+  panel1 = props.modelValue[index]
+  panel2 = props.modelValue[index + 1]
+  if (!panel1 || !panel2) return
+
+  isHorizontal = (direction === 'horizontal')
+  resizing = true
+
+  window.addEventListener('mousemove', onResizeMove)
+  window.addEventListener('mouseup', onResizeEnd)
+}
+
+const onResizeMove = (e) => {
+  if (!resizing || !panel1 || !panel2) return
+
+  const container = document.querySelector('.split-view')
+  if (!container) return
+  const rect = container.getBoundingClientRect()
+  containerSize = isHorizontal ? rect.width : rect.height
+
+  const currentCoord = isHorizontal ? e.clientX : e.clientY
+  if (startCoord === 0) {
+    startCoord = currentCoord
+    startSize1 = panel1.size
+    startSize2 = panel2.size
+    return
+  }
+
+  const delta = currentCoord - startCoord
+  const deltaPercent = (delta / containerSize) * 100
+
+  let newSize1 = startSize1 + deltaPercent
+  let newSize2 = startSize2 - deltaPercent
+
+  newSize1 = Math.max(10, Math.min(90, newSize1))
+  newSize2 = Math.max(10, Math.min(90, newSize2))
+
+  const newPanels = props.modelValue.map(p => {
+    if (p.id === panel1.id) return { ...p, size: newSize1 }
+    if (p.id === panel2.id) return { ...p, size: newSize2 }
+    return p
+  })
+  emit('update:modelValue', newPanels)
+}
+
+const onResizeEnd = () => {
+  resizing = false
+  startCoord = 0
+  panel1 = panel2 = null
+  window.removeEventListener('mousemove', onResizeMove)
+  window.removeEventListener('mouseup', onResizeEnd)
+}
+
+onBeforeUnmount(() => {
+  if (resizing) {
+    window.removeEventListener('mousemove', onResizeMove)
+    window.removeEventListener('mouseup', onResizeEnd)
+  }
+})
 </script>
 
 <style scoped>
 .split-view {
+  display: flex;
   width: 100%;
   height: 100%;
-  display: flex;
   position: relative;
 }
 .empty-drop-zone {

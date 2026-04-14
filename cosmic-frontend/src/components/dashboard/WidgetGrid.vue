@@ -30,14 +30,12 @@
             <button class="widget-close" @click="removeWidget(item.i)">×</button>
           </div>
           <div class="widget-content">
-            <!-- Здесь будет содержимое виджета в зависимости от типа -->
             <component :is="getWidgetComponent(item.i)" :widget-id="item.i" />
           </div>
         </div>
       </GridItem>
     </GridLayout>
 
-    <!-- Панель добавления виджетов -->
     <div v-if="layout.length < maxWidgets" class="add-widget-panel">
       <button
         v-for="type in availableWidgetTypes"
@@ -63,10 +61,8 @@ const maxWidgets = 4
 const availableWidgetTypes = ['servers', 'containers', 'logs', 'alerts']
 
 
-// Начальный макет (можно загружать из localStorage)
 const layout = ref([])
 
-// Начальный макет (можно оставить пустым или задать предустановленный)
 const defaultLayout = []
 
 const resetLayout = () => {
@@ -96,15 +92,13 @@ const widgetComponents = {
 
 const getWidgetComponent = (type) => widgetComponents[type]
 
-// Добавление нового виджета
+
 const addWidget = (type) => {
   if (layout.value.length >= maxWidgets) return
 
-  // Генерируем уникальный идентификатор
   const id = `${type}-${Date.now()}`
 
-  // Определяем начальную позицию (первое свободное место)
-  // Упрощённо: ставим в конец с размерами 4x4
+
   const newItem = {
     i: id,
     x: 0,
@@ -124,12 +118,7 @@ const removeWidget = (id) => {
   layout.value = layout.value.filter(item => item.i !== id)
 }
 
-// При изменении макета можно сохранять в localStorage
-const onLayoutUpdated = (newLayout) => {
-  // Опционально: сохраняем позиции и размеры
-}
 
-// Экспортируем метод для родителя
 defineExpose({ resetLayout })
 </script>
 

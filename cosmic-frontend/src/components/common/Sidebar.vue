@@ -12,7 +12,6 @@
     </div>
 
     <nav class="nav">
-      <!-- Основной раздел Dashboard (сворачиваемый) -->
       <div class="nav-group">
         <div class="nav-item nav-item--parent" @click="toggleCollapsed">
           <router-link to="/dashboard" class="nav-link" @click.stop>Dashboard</router-link>
@@ -22,7 +21,7 @@
         </div>
         <div v-show="!isCollapsed" class="nav-children">
           <router-link
-            v-for="item in navItems"
+            v-for="item in pageNavItems"
             :key="item.type"
             :to="item.path"
             class="nav-link"
@@ -33,6 +32,19 @@
           >
             {{ item.label }}
           </router-link>
+        </div>
+      </div>
+
+      <div class="drag-sources">
+        <div
+          v-for="item in widgetNavItems"
+          :key="item.type"
+          class="nav-link drag-only"
+          draggable="true"
+          @dragstart="onNavDragStart($event, item.type)"
+          @dragend="onNavDragEnd"
+        >
+          {{ item.label }}
         </div>
       </div>
     </nav>
@@ -61,21 +73,24 @@ const props = defineProps({
 
 const emit = defineEmits(['drag-start', 'drag-end'])
 
-const navItems = [
+const pageNavItems = [
   { type: 'servers', label: 'Servers', path: '/servers' },
   { type: 'containers', label: 'Containers', path: '/containers' },
   { type: 'logs', label: 'Logs', path: '/logs' },
   { type: 'alerts', label: 'Alerts', path: '/alerts' }
 ]
 
-// --- Сворачивание списка страниц ---
+const widgetNavItems = [
+  { type: 'api-cards', label: 'API Cards' },
+  { type: 'metrics', label: 'Metrics' }
+]
+
 const isCollapsed = ref(true)
 
 const toggleCollapsed = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
-// --- Перетаскивание пунктов навигации (для добавления панелей) ---
 const onNavDragStart = (e, type) => {
   e.dataTransfer.effectAllowed = 'move'
   e.dataTransfer.setData('text/plain', type)
@@ -86,7 +101,6 @@ const onNavDragEnd = () => {
   emit('drag-end')
 }
 
-// --- Перемещение самого сайдбара (drag & drop с инерцией) ---
 const sidebarPosition = inject('sidebarPosition')
 
 const isDragging = ref(false)
@@ -129,7 +143,7 @@ const onDragMove = (e) => {
   const deltaX = e.clientX - lastX
 
   if (deltaTime > 0) {
-    velocity = deltaX / deltaTime // px/ms
+    velocity = deltaX / deltaTime
   }
 
   const offset = e.clientX - startX
@@ -302,6 +316,29 @@ onUnmounted(() => {
   left: auto;
   right: 0;
   border-radius: 3px 0 0 3px;
+}
+
+.drag-sources {
+  margin-top: 8px;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+}
+
+.drag-only {
+  cursor: grab;
+  opacity: 0.8;
+  background: rgba(77, 230, 209, 0.05);
+  border: 1px dashed rgba(77, 230, 209, 0.3);
+  margin-bottom: 4px;
+  display: block;
+  text-align: left;
+}
+.drag-only:hover {
+  background: rgba(77, 230, 209, 0.15);
+  opacity: 1;
+}
+.drag-only:active {
+  cursor: grabbing;
 }
 
 .collapse-toggle {

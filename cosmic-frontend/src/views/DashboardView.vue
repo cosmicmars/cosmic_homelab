@@ -14,14 +14,14 @@ import SplitView from '../components/common/SplitView.vue'
 
 const draggingType = inject('draggingType', null)
 
-const panels = ref([
-  { id: `initial-${Date.now()}`, type: 'servers', size: 100 }
-])
+const initialPanels = () => [
+  { id: 'initial-' + Date.now(), type: 'servers', size: 100 }
+]
+
+const panels = ref(initialPanels())
 
 const resetLayout = () => {
-  panels.value = [
-    { id: `initial-${Date.now()}`, type: 'servers', size: 100 }
-  ]
+  panels.value = initialPanels()
 }
 </script>
 
