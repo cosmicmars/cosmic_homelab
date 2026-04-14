@@ -4,55 +4,85 @@
     <meta charset="UTF-8" />
     <title>Cosmic</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="stil.css">
+
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
-<header class="hed">
-    <div class="left">
-        <span class="brand">Cosmic</span>
+<!-- 🌌 ЗВЁЗДНЫЙ ФОН (первым в body, ниже всех) -->
+<canvas id="starsCanvas"></canvas>
+
+<!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
+<div id="layout">
+
+    <!-- TOP ZONE -->
+    <div id="top-zone" class="drop-zone">
+        <div class="ui-block draggable" draggable="true" id="block-header">
+            <header class="hed">
+                <div class="left">
+                    <span class="brand">Cosmic</span>
+                </div>
+                <nav class="nav">
+                    <a class="active" href="#">Dashboard</a>
+                    <a href="#">Servers</a>
+                    <a href="#">Containers</a>
+                    <a href="#">Alerts</a>
+                    <a href="#">Logs</a>
+                </nav>
+                <div class="right">
+                    <button type="button" class="settings">Settings</button>
+                </div>
+            </header>
+        </div>
     </div>
 
-    <nav class="nav">
-        <a class="active" href="index.html">Dashboard</a>
-        <a href="pages/server.html">Servers</a>
-        <a href="pages/container.html">Containers</a>
-        <a href="pages/alert.html">Alerts</a>
-        <a href="pages/logs.html">Logs</a>
-    </nav>
+    <!-- MIDDLE ZONE -->
+    <div id="middle">
+        <div id="left-zone" class="drop-zone"></div>
 
-    <div class="right">
-        <button class="settings">Settings</button>
+        <div id="content-zone" class="drop-zone">
+            <div class="ui-block draggable" draggable="true" id="block-content">
+                <div id="content">
+                    <div class="hedir">
+                        <h1 class="h h-pr">Hello, select your server</h1>
+                        <button type="button" id="openServerModal" class="settings">Select server</button>
+                    </div>
+                    <main class="wrap">
+                        <div id="serversContainer" class="all-card hidden"></div>
+                        <section class="chart-big hidden" id="bigChartContainer">
+                            <canvas id="bigChart"></canvas>
+                        </section>
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        <div id="right-zone" class="drop-zone"></div>
     </div>
-</header>
 
-<div class="hedir">
-    <h1 class="h h-pr">Hello, select your server</h1>
-    <b></b>
-    <button id="openServerModal" class="settings">Select server</button>
+    <!-- BOTTOM ZONE -->
+    <div id="bottom-zone" class="drop-zone"></div>
+
 </div>
 
-<!-- modalka-davalka -->
+<!-- МОДАЛЬНОЕ ОКНО -->
 <div class="modal hidden" id="serverModal">
     <div class="modal-content">
         <h3>Select up to 2 servers</h3>
         <ul id="serverList"></ul>
-        <button id="applyServers" class="modal-apply" disabled>
+        <button type="button" id="applyServers" class="modal-apply" disabled>
             Load selected servers
         </button>
     </div>
 </div>
-<!-- tut-servera -->
-<main class="wrap">
-    <div id="serversContainer" class="all-card hidden"></div>
-    <section class="chart-big hidden" id="bigChartContainer">
-        <canvas id="bigChart"></canvas>
-    </section>
-</main>
-<canvas id="starsCanvas"></canvas>
+
+<!-- ЕДИНЫЙ СКРИПТ -->
 <script type="module" src="script.js"></script>
 <script type="module" src="scr.js"></script>
+
 </body>
 </html>

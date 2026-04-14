@@ -1,3 +1,7 @@
+const layout = document.getElementById('layout');
+const draggables = document.querySelectorAll('.draggable');
+const zones = document.querySelectorAll('.drop-zone');
+let dragged = null;
 const BASE_URL = 'http://localhost:8000';
 
     let sseSource = null;
@@ -753,3 +757,44 @@ function drawSmoothArea(canvas, color, dataPoints = null) {
             });
         }
     });
+
+// 🚀 DRAG START / END
+draggables.forEach(el => {
+    el.addEventListener('dragstart', (e) => {
+        dragged = el;
+
+        // 👇 важно для браузера
+        e.dataTransfer.setData('text/plain', '');
+
+        layout.classList.add('layout-dragging');
+        setTimeout(() => el.classList.add('dragging'), 0);
+    });
+
+    el.addEventListener('dragend', () => {
+        layout.classList.remove('layout-dragging');
+        el.classList.remove('dragging');
+        dragged = null;
+    });
+});
+
+// 🎯 DROP ZONES
+zones.forEach(zone => {
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault(); // 👈 КРИТИЧНО
+        zone.classList.add('hover');
+    });
+
+    zone.addEventListener('dragleave', () => {
+        zone.classList.remove('hover');
+    });
+
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+
+        zone.classList.remove('hover');
+
+        if (dragged) {
+            zone.appendChild(dragged);
+        }
+    });
+});
