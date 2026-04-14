@@ -1,0 +1,188 @@
+/* ===== ОБЩИЕ ПЕРЕМЕННЫЕ И СБРОС ===== */
+:root {
+  --bg: #0b0d10;
+  --panel: #121418;
+  --border: rgba(255, 255, 255, 0.08);
+  --cyan: #4de6d1;
+  --green: #7be495;
+  --red: #ff6b6b;
+  --text: #ffffff;
+  --muted: #9aa0aa;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html, body, #app {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden !important;
+}
+
+body {
+  background: radial-gradient(circle at top, #121418, #07080a);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+}
+
+/* ===== ЗВЁЗДНЫЙ ФОН ===== */
+#starsCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== ОСНОВНОЙ МАКЕТ С САЙДБАРОМ ===== */
+#layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+#layout.sidebar-right {
+  flex-direction: row-reverse;
+}
+
+#main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  background: transparent;
+}
+
+/* ===== СТИЛИ ДЛЯ DASHBOARD ===== */
+.dashboard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.widgets-container {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  min-height: 0;
+}
+
+.widget-column {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.widget-column.show-grid {
+  border: 2px dashed var(--cyan);
+  background: rgba(77, 230, 209, 0.05);
+}
+
+/* ===== КАРТОЧКИ И МЕТРИКИ ===== */
+.cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  color: white;
+  min-width: 200px;
+}
+
+.server-metrics {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+}
+
+/* ===== МОДАЛКА ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #0f141a;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  width: 320px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== КНОПКИ И ПРОЧЕЕ ===== */
+.settings {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.settings:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Скрытие элементов */
+.hidden {
+  display: none !important;
+}
+
+/* vue-grid-layout базовые стили */
+.vue-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+}
+
+.vue-grid-item {
+  transition: all 200ms ease;
+  box-sizing: border-box;
+}
+
+.vue-grid-item.vue-grid-placeholder {
+  background: var(--cyan);
+  opacity: 0.2;
+  border-radius: 8px;
+}
