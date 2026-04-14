@@ -1,8 +1,9 @@
 from typing import Optional
 import docker
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
+from dotenv.main import with_warn_for_invalid_lines
+from fastapi import FastAPI, HTTPException, Request, Body
+from fastapi.middleware.cors import CORSMiddleware  # Важно!
 from fastapi.responses import StreamingResponse
 from pathlib import Path
 import os
@@ -14,6 +15,9 @@ import json
 import httpx
 import asyncio
 import platform
+from io import BytesIO
+import tempfile
+from docker.types import LogConfig
 
 with open('config.yaml', 'r', encoding='utf-8') as file:
     load_yaml = yaml.safe_load(file)
@@ -21,6 +25,7 @@ with open('config.yaml', 'r', encoding='utf-8') as file:
 BASE_URL = load_yaml['server']['host']
 DATA_FILE = Path("data.json")
 print(load_yaml['ui']['welcome_ascii'])
+client = docker.from_env()
 
 app = FastAPI()
 
@@ -264,19 +269,43 @@ def get_ip(container_id: str):
     except docker.errors.NotFound:
         raise HTTPException(status_code=404, detail="Container not found")
 
-@app.get("/create")
-def create_container(name: str, image: str = "ubuntu", cmd: str = "sleep 3600"):
-    check_docker()
+@app.post("/build")
+def build_image(image_name: str, dockerfile: str = Body(..., media_type="text/plain")):
+    image_name = image_name.strip()
     try:
-        try:
-            client.images.get(image)
-        except:
-            client.images.pull(image)
-        c = client.containers.run(image, cmd.split(), name=name, detach=True)
-        return {"status": "created", "id": c.short_id, "name": name}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(os.path.join(tmpdir, "Dockerfile"), "w") as f:
+                f.write(dockerfile)
+            
+            image, _ = client.images.build(path=tmpdir, rm=True, forcerm=True)
+            
+            image.tag(image_name)
+            
+        return {"status": "built", "image_id": image.short_id, "image_name": image_name}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.post("/run")
+def run_container(image_name: str, container_name: str, cmd: str = None):
+    image_name = image_name.strip()
+    container_name = container_name.strip()
+    try:
+        command = cmd.split() if cmd else None
+        
+        # Принудительно ставим читаемый драйвер логов
+        log_cfg = LogConfig(type=LogConfig.types.JSON)
+        
+        c = client.containers.run(
+            image_name, 
+            command, 
+            name=container_name, 
+            detach=True,
+            log_config=log_cfg # <--- добавили сюда
+        )
+        return {"status": "running", "container_id": c.short_id, "container_name": container_name}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
 @app.delete("/remove/{name}")
 def remove_container(name: str):
     check_docker()
