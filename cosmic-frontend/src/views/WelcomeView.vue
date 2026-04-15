@@ -21,8 +21,20 @@
       <!-- Форма добавления хоста -->
       <div v-if="showAddForm" class="add-host-form">
         <input v-model="newHost.name" type="text" placeholder="Название хоста" />
-        <input v-model="newHost.url" type="text" placeholder="URL (unix://..., npipe://..., tcp://...)" />
-        <button @click="addHost" :disabled="!newHost.name || !newHost.url || adding">Добавить</button>
+        <div class="url-input-wrapper">
+          <input v-model="newHost.url" type="text" placeholder="URL (unix://..., npipe://..., tcp://...)" />
+          <button 
+            class="detect-btn" 
+            @click="detectLocalDocker" 
+            :disabled="detecting"
+            title="Автоопределить локальный Docker"
+          >
+            {{ detecting ? 'Загрузка...' : 'Авто поиск' }}
+          </button>
+        </div>
+        <button @click="addHost" :disabled="!newHost.name || !newHost.url || adding">
+          {{ adding ? 'Добавление...' : 'Добавить' }}
+        </button>
       </div>
 
       <div v-if="loading">Загрузка...</div>
@@ -77,19 +89,16 @@ const hosts = ref([])
 const loading = ref(true)
 const error = ref(null)
 const connecting = ref(null)
-
-// Форма добавления
 const showAddForm = ref(false)
 const adding = ref(false)
+const detecting = ref(false)
 const newHost = ref({ name: '', url: '' })
 
-// Отладочный лог
+// Показываем предупреждение при редиректе с защищённой страницы
 onMounted(() => {
-  console.log('WelcomeView mounted, route.query:', route.query)
   if (route.query.reason === 'no_connection') {
     toast.warning('Подключитесь к Docker-хосту для доступа к этой странице', 4000)
   }
-  loadHosts()
 })
 
 watch(() => route.query.reason, (reason) => {
@@ -123,7 +132,6 @@ const connectToDockerHost = async (host) => {
     await connectToHost(host.url)
     setHost(host)
     toast.success(`Подключено к ${host.name}`, 2000)
-    console.log(' Redirecting to dashboard...')
     router.push('/dashboard')
   } catch (e) {
     toast.error('Не удалось подключиться к хосту: ' + e.message)
@@ -156,11 +164,30 @@ const deleteHost = async (hostId) => {
   try {
     await apiDeleteHost(hostId)
     await loadHosts()
-    toast.info('Хост удалён')
+    toast.success('Хост удалён')
   } catch (e) {
     toast.error('Ошибка при удалении хоста: ' + e.message)
   }
 }
+
+const detectLocalDocker = async () => {
+  detecting.value = true
+  try {
+    const res = await fetch('http://localhost:8000/detect-docker')
+    if (!res.ok) throw new Error('Локальный Docker не найден')
+    const data = await res.json()
+    newHost.value.url = data.url
+    if (!newHost.value.name) {
+      newHost.value.name = `Docker (${data.os || 'local'})`
+    }
+  } catch (e) {
+    toast.error(e.message)
+  } finally {
+    detecting.value = false
+  }
+}
+
+onMounted(loadHosts)
 </script>
 
 <style scoped>
@@ -245,7 +272,9 @@ const deleteHost = async (hostId) => {
   background: rgba(0,0,0,0.2);
   padding: 16px;
   border-radius: 12px;
+  flex-wrap: wrap;
 }
+
 .add-host-form input {
   flex: 1;
   padding: 10px;
@@ -253,8 +282,35 @@ const deleteHost = async (hostId) => {
   border-radius: 8px;
   background: #1e1e2f;
   color: white;
+  min-width: 200px;
 }
-.add-host-form button {
+
+.url-input-wrapper {
+  display: flex;
+  gap: 8px;
+  flex: 2;
+}
+
+.detect-btn {
+  padding: 10px;
+  background: #4a5568;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background 0.2s;
+  color: white;
+}
+.detect-btn:hover {
+  background: #5a6578;
+}
+.detect-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-host-form button[type="button"],
+.add-host-form > button {
   padding: 10px 20px;
   background: var(--green);
   border: none;

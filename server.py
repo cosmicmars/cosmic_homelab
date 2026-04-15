@@ -1,10 +1,14 @@
 from typing import Optional
 import docker
 import uvicorn
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+from pydantic import BaseModel
+
 import os
 import yaml
 import datetime
@@ -14,6 +18,7 @@ import json
 import httpx
 import asyncio
 import platform
+import traceback
 
 with open('config.yaml', 'r', encoding='utf-8') as file:
     load_yaml = yaml.safe_load(file)
@@ -36,6 +41,13 @@ app.add_middleware(
 )
 
 client = None
+
+executor = ThreadPoolExecutor(max_workers=4)
+
+class CreateContainerRequest(BaseModel):
+    name: str
+    image: str = "ubuntu"
+    cmd: str = "sleep 3600"
 
 def save_data(data: dict):
     with DATA_FILE.open("w", encoding="utf-8") as f:
@@ -200,6 +212,14 @@ def get_hosts():
     hosts_config = load_hosts_config()
     return [get_host_info(h) for h in hosts_config]
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print("Unhandled exception:", traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
+
 @app.post("/hosts")
 async def add_host(host: dict):
     if not host.get('name') or not host.get('url'):
@@ -264,16 +284,18 @@ def get_ip(container_id: str):
     except docker.errors.NotFound:
         raise HTTPException(status_code=404, detail="Container not found")
 
-@app.get("/create")
-def create_container(name: str, image: str = "ubuntu", cmd: str = "sleep 3600"):
+@app.post("/create")
+def create_container(req: CreateContainerRequest):
     check_docker()
     try:
         try:
-            client.images.get(image)
-        except:
-            client.images.pull(image)
-        c = client.containers.run(image, cmd.split(), name=name, detach=True)
-        return {"status": "created", "id": c.short_id, "name": name}
+            client.images.get(req.image)
+        except docker.errors.ImageNotFound:
+            client.images.pull(req.image)
+        
+        command = req.cmd.split() if req.cmd else None
+        c = client.containers.run(req.image, command, name=req.name, detach=True)
+        return {"status": "created", "id": c.short_id, "name": req.name}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -322,6 +344,18 @@ def run_container_from_image(image: str, name: Optional[str] = None, cmd: str = 
         return {"status": "started", "id": container.short_id, "name": name}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/detect-docker")
+def detect_docker():
+    client = find_docker()
+    if client:
+        if platform.system() == "Windows":
+            url = "npipe:////./pipe/docker_engine"
+        else:
+            url = "unix:///var/run/docker.sock"
+        return {"url": url, "os": platform.system()}
+    else:
+        raise HTTPException(status_code=503, detail="Docker not found")
 
 @app.delete("/images/{image_name}")
 def remove_image(image_name: str):
@@ -458,12 +492,32 @@ async def stream_cpu(container_id: str, request: Request):
 
 @app.get("/sse/container/{container_id}/logs")
 async def stream_logs(container_id: str, request: Request):
+    check_docker()
+    try:
+        container = client.containers.get(container_id)
+    except docker.errors.NotFound:
+        raise HTTPException(status_code=404, detail="Container not found")
+
     async def generate():
-        container = docker.from_env().containers.get(container_id)
-        for log_line in container.logs(stream=True, follow=True, timestamps=True):
-            if await request.is_disconnected():
-                break
-            yield f"data: {log_line.decode('utf-8').rstrip()}\n\n"
+        loop = asyncio.get_event_loop()
+        try:
+            # Запускаем блокирующий logs в отдельном потоке
+            logs_generator = container.logs(stream=True, follow=True, timestamps=True)
+            while not await request.is_disconnected():
+                try:
+                    # Получаем следующую строку логов в потоке
+                    log_line = await loop.run_in_executor(executor, next, logs_generator)
+                    yield f"data: {log_line.decode('utf-8').rstrip()}\n\n"
+                except StopIteration:
+                    break
+                except Exception as e:
+                    yield f"data: Error: {str(e)}\n\n"
+                    break
+        finally:
+            # Явно закрываем генератор (если возможно)
+            if hasattr(logs_generator, 'close'):
+                logs_generator.close()
+
     return StreamingResponse(
         generate(),
         media_type="text/event-stream",

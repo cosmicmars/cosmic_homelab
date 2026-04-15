@@ -4,7 +4,6 @@
     :style="{ flex: `0 0 ${panel.size}%` }"
     @dragover.prevent="onDragOver"
     @dragleave="onDragLeave"
-    @drop.prevent="onDrop"
   >
     <div class="pane-header">
       <span>{{ panel.type }}</span>
@@ -81,14 +80,6 @@ const onDragOver = (e) => {
 }
 
 const onDragLeave = () => {
-  activeZone.value = null
-}
-
-const onDrop = (e) => {
-  const type = e.dataTransfer.getData('text/plain')
-  if (!type) return
-  const position = activeZone.value || 'right'
-  emit('add-panel', { type, targetId: props.panel.id, position })
   activeZone.value = null
 }
 

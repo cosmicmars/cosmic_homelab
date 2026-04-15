@@ -41,7 +41,7 @@
               <span v-else class="no-params">—</span>
             </td>
             <td class="actions">
-              <button @click="sendRequest(ep)" class="send-btn">🚀 Отправить</button>
+              <button @click="sendRequest(ep)" class="send-btn">Отправить</button>
             </td>
           </tr>
         </tbody>
@@ -80,18 +80,17 @@ endpoints.forEach(ep => {
 })
 
 const sendRequest = async (ep) => {
+  let params = {}
   let id = containerIds[ep.path]
-  // Для создания контейнера собираем параметры из формы
+  
   if (ep.params) {
-    const params = {}
     ep.params.forEach(p => {
       params[p.name] = paramValues[ep.path + '_' + p.name]
     })
-    // Формируем id как объект с параметрами (можно передать в sendApiRequest отдельно)
-    id = params
   }
+
   try {
-    const data = await sendApiRequest(ep, id)
+    const data = await sendApiRequest(ep, id, params)
     responses[ep.path] = JSON.stringify(data, null, 2)
   } catch (e) {
     responses[ep.path] = `Error: ${e.message}`
