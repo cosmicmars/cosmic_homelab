@@ -26,6 +26,7 @@ with open('config.yaml', 'r', encoding='utf-8') as file:
 BASE_URL = load_yaml['server']['host']
 DATA_FILE = Path("data.json")
 print(load_yaml['ui']['welcome_ascii'])
+client = docker.from_env()
 
 app = FastAPI()
 
@@ -299,6 +300,27 @@ def create_container(req: CreateContainerRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.post("/run")
+def run_container(image_name: str, container_name: str, cmd: str = None):
+    image_name = image_name.strip()
+    container_name = container_name.strip()
+    try:
+        command = cmd.split() if cmd else None
+        
+        # Принудительно ставим читаемый драйвер логов
+        log_cfg = LogConfig(type=LogConfig.types.JSON)
+        
+        c = client.containers.run(
+            image_name, 
+            command, 
+            name=container_name, 
+            detach=True,
+            log_config=log_cfg # <--- добавили сюда
+        )
+        return {"status": "running", "container_id": c.short_id, "container_name": container_name}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
 @app.delete("/remove/{name}")
 def remove_container(name: str):
     check_docker()
