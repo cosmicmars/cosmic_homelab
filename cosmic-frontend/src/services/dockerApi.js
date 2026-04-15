@@ -86,8 +86,15 @@ export async function fetchContainerMetrics(containerId) {
 }
 
 export async function createContainer(name, image = 'ubuntu', cmd = 'sleep 3600') {
-  const params = new URLSearchParams({ name, image, cmd })
-  const res = await fetch(`${BASE_URL}/create?${params}`)
+  const res = await fetch(`${BASE_URL}/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, image, cmd })
+  })
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || 'Failed to create container')
+  }
   return res.json()
 }
 
@@ -126,13 +133,26 @@ export function createLogsEventSource(containerId) {
   return new EventSource(`${BASE_URL}/sse/container/${containerId}/logs`)
 }
 
-export async function sendApiRequest(endpoint, idValue) {
+export async function sendApiRequest(endpoint, idValue, params = {}) {
   let url = BASE_URL + endpoint.path
   if (endpoint.needId && idValue) {
     url = url.replace('{id}', idValue).replace('{name}', idValue)
   }
 
   const options = { method: endpoint.method }
+  
+  // Если есть параметры и метод GET, добавляем в URL
+  if (Object.keys(params).length > 0) {
+    if (endpoint.method === 'GET') {
+      const query = new URLSearchParams(params).toString()
+      url += '?' + query
+    } else {
+      // Для POST/PUT можно передать в теле
+      options.headers = { 'Content-Type': 'application/json' }
+      options.body = JSON.stringify(params)
+    }
+  }
+
   const res = await fetch(url, options)
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   return res.json()

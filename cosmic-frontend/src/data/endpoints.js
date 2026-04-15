@@ -1,4 +1,17 @@
 export const endpoints = [
+    {
+    name: 'Создать контейнер',
+    method: 'POST',
+    path: '/create',
+    description: 'Создать новый контейнер',
+    needId: false,
+    params: [
+      { name: 'name', placeholder: 'my_container', value: 'test_container' },
+      { name: 'image', placeholder: 'ubuntu', value: 'ubuntu' },
+      { name: 'cmd', placeholder: 'sleep 3600', value: 'sleep 3600' }
+    ],
+    color: 'post'
+  },
   {
     name: 'Главная',
     method: 'GET',

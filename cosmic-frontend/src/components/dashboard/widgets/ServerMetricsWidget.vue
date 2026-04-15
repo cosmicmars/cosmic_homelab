@@ -97,6 +97,12 @@ const tabs = [
   { id: 'info', label: 'Информация' }
 ]
 
+
+const viewLogs = (id) => {
+  router.push({ name: 'logs', query: { container: id } })
+}
+
+
 const memoryPercent = computed(() => {
   if (!metrics.value.memory_usage || !metrics.value.memory_limit) return 0
   return ((metrics.value.memory_usage / metrics.value.memory_limit) * 100).toFixed(1)

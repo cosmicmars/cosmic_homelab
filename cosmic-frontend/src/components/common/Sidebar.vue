@@ -76,8 +76,7 @@ const emit = defineEmits(['drag-start', 'drag-end'])
 const pageNavItems = [
   { type: 'servers', label: 'Servers', path: '/servers' },
   { type: 'containers', label: 'Containers', path: '/containers' },
-  { type: 'logs', label: 'Logs', path: '/logs' },
-  { type: 'alerts', label: 'Alerts', path: '/alerts' }
+  { type: 'logs', label: 'Logs', path: '/logs' }
 ]
 
 const widgetNavItems = [
