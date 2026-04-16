@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi import WebSocket, WebSocketDisconnect
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from pydantic import BaseModel
@@ -19,6 +20,7 @@ import httpx
 import asyncio
 import platform
 import traceback
+import logging
 
 with open('config.yaml', 'r', encoding='utf-8') as file:
     load_yaml = yaml.safe_load(file)
@@ -44,6 +46,8 @@ app.add_middleware(
 client = None
 
 executor = ThreadPoolExecutor(max_workers=4)
+
+logger = logging.getLogger("uvicorn")
 
 class CreateContainerRequest(BaseModel):
     name: str
@@ -95,11 +99,10 @@ def switch_docker_client(host_url: str):
         return False
 
 def check_docker():
-    global client
-    if not client:
-        client = find_docker()
-    if not client:
-        raise HTTPException(status_code=503, detail="Docker недоступен")
+    try:
+        client.ping()
+    except Exception as e:
+        raise RuntimeError(f"Docker not available: {e}")
 
 def load_hosts_config():
     if HOSTS_FILE.exists():
@@ -549,6 +552,185 @@ async def stream_logs(container_id: str, request: Request):
             "Connection": "keep-alive",
         }
     )
+
+def get_or_create_host_container():
+    name = "host-shell"
+
+    try:
+        container = client.containers.get(name)
+        if container.status != "running":
+            container.start()
+        return container
+    except docker.errors.NotFound:
+        return client.containers.run(
+            "alpine",
+            name=name,
+            command="/bin/sh",
+            stdin_open=True,
+            tty=True,
+            detach=True,
+            privileged=True,
+            pid_mode="host",
+            network_mode="host",
+            volumes={"/": {"bind": "/host", "mode": "rw"}},
+        )
+
+@app.websocket("/ws/host")
+async def websocket_host(websocket: WebSocket):
+    token = websocket.query_params.get("token")
+    
+    await websocket.accept()
+
+    auth = await websocket.receive_text()
+
+    if auth != "Bearer SECRET":
+        await websocket.close(code=1008)
+        return
+
+    try:
+        container = get_or_create_host_container()
+
+        exec_id = client.api.exec_create(
+            container.id,
+            cmd="/bin/sh",
+            stdin=True,
+            tty=True,
+        )["Id"]
+
+        sock = client.api.exec_start(exec_id, socket=True, tty=True)
+
+        raw_sock = sock._sock if hasattr(sock, "_sock") else sock
+        raw_sock.setblocking(False)
+
+    except Exception as e:
+        await websocket.close(code=1011, reason=str(e))
+        return
+
+    loop = asyncio.get_event_loop()
+    running = True
+
+    async def read_from_docker():
+        nonlocal running
+        while running:
+            try:
+                data = await loop.run_in_executor(None, raw_sock.recv, 4096)
+                if not data:
+                    break
+                await websocket.send_bytes(data)
+            except BlockingIOError:
+                await asyncio.sleep(0.01)
+            except Exception:
+                break
+        running = False
+
+    async def write_to_docker():
+        nonlocal running
+        try:
+            while running:
+                data = await websocket.receive_text()
+                await loop.run_in_executor(None, raw_sock.send, data.encode())
+        except WebSocketDisconnect:
+            running = False
+        finally:
+            raw_sock.close()
+
+    await asyncio.gather(read_from_docker(), write_to_docker())
+
+
+@app.websocket("/ws/attach/{container_id}")
+async def websocket_attach(websocket: WebSocket, container_id: str):
+    await websocket.accept()
+    check_docker()
+
+    try:
+        container = client.containers.get(container_id)
+
+        # Проверка статуса контейнера
+        container.reload()
+        if container.status != "running":
+            await websocket.close(code=1011, reason="Container is not running")
+            return
+
+        # Подбираем shell
+        shells = ["/bin/bash", "/bin/sh", "/bin/ash"]
+        exec_id = None
+
+        for shell in shells:
+            try:
+                exec_instance = client.api.exec_create(
+                    container.id,
+                    cmd=shell,
+                    stdin=True,
+                    tty=True,
+                )
+                exec_id = exec_instance["Id"]
+                break
+            except Exception:
+                continue
+
+        if not exec_id:
+            await websocket.close(code=1011, reason="No shell found")
+            return
+
+        # Запуск exec с сокетом
+        sock = client.api.exec_start(exec_id, socket=True, tty=True)
+
+        # ВАЖНО: получаем raw socket
+        if hasattr(sock, "_sock"):
+            raw_sock = sock._sock
+        else:
+            raw_sock = sock
+
+        raw_sock.setblocking(False)
+
+    except Exception as e:
+        await websocket.close(code=1011, reason=str(e))
+        return
+
+    loop = asyncio.get_event_loop()
+    running = True
+
+    async def read_from_docker():
+        nonlocal running
+        try:
+            while running:
+                try:
+                    data = await loop.run_in_executor(
+                        None, raw_sock.recv, 4096
+                    )
+                    if not data:
+                        break
+                    await websocket.send_bytes(data)
+                except BlockingIOError:
+                    await asyncio.sleep(0.01)
+                except Exception:
+                    break
+        finally:
+            running = False
+
+    async def write_to_docker():
+        nonlocal running
+        try:
+            while running:
+                data = await websocket.receive_text()
+                await loop.run_in_executor(
+                    None, raw_sock.send, data.encode()
+                )
+        except WebSocketDisconnect:
+            running = False
+        except Exception:
+            running = False
+        finally:
+            try:
+                raw_sock.close()
+            except Exception:
+                pass
+
+    await asyncio.gather(
+        read_from_docker(),
+        write_to_docker(),
+    )
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
