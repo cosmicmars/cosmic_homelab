@@ -87,6 +87,13 @@
               >
                 📊
               </button>
+              <button
+                class="action-icon console"
+                @click="openConsole(c.id)"
+                title="Консоль"
+              >
+                🖥️
+              </button>
             </td>
           </tr>
         </tbody>
@@ -117,11 +124,22 @@
         </div>
       </div>
     </div>
+
+    <!-- Модальное окно консоли -->
+    <div v-if="showConsole" class="console-modal" @click.self="closeConsole">
+      <div class="console-container">
+        <div class="console-header">
+          <span>Консоль: {{ consoleContainerName }}</span>
+          <button class="close-btn" @click="closeConsole">✕</button>
+        </div>
+        <div ref="terminalContainer" class="terminal"></div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed } from 'vue'
+import { ref, onMounted, watch, nextTick, computed, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   fetchContainers,
@@ -131,8 +149,9 @@ import {
   fetchContainerMetrics
 } from '../services/dockerApi'
 import { useMetrics } from '../composables/useMetrics'
+import { Terminal } from '@xterm/xterm'
+import '@xterm/xterm/css/xterm.css'
 import Chart from 'chart.js/auto'
-
 
 const router = useRouter()
 
@@ -149,6 +168,7 @@ const filteredContainers = computed(() => {
   )
 })
 
+// Метрики
 const selectedContainerId = ref(null)
 const selectedContainerName = computed(() => {
   const c = containers.value.find(c => c.id === selectedContainerId.value)
@@ -158,6 +178,14 @@ const selectedContainerName = computed(() => {
 const { metrics, cpuHistory, startAutoUpdate, stopAutoUpdate } = useMetrics()
 const cpuChartCanvas = ref(null)
 let cpuChart = null
+
+// Консоль
+const showConsole = ref(false)
+const consoleContainerId = ref(null)
+const consoleContainerName = ref('')
+const terminalContainer = ref(null)
+let term = null
+let socket = null
 
 const loadContainers = async () => {
   loading.value = true
@@ -245,8 +273,7 @@ const updateChart = () => {
   if (!cpuChart) {
     initChart()
   } else {
-    cpuChart.data.labels = Array(cpuHistory.value.length).fill('')
-    cpuChart.data.datasets[0].data = [...cpuHistory.value]
+    cpuChart.data.datasets[0].data = cpuHistory.value
     cpuChart.update()
   }
 }
@@ -270,15 +297,63 @@ watch(cpuHistory, () => {
   updateChart()
 }, { deep: true })
 
-onBeforeUnmount(() => {
-  stopAutoUpdate()
-  if (cpuChart) {
-    cpuChart.destroy()
-    cpuChart = null
+// Консоль
+const openConsole = (containerId) => {
+  const container = containers.value.find(c => c.id === containerId)
+  if (!container) return
+  consoleContainerId.value = containerId
+  consoleContainerName.value = container.name
+  showConsole.value = true
+  nextTick(() => {
+    if (term) term.dispose()
+    term = new Terminal({
+      cursorBlink: true,
+      theme: { background: '#0d1117', foreground: '#e6edf3' },
+      fontSize: 14,
+      fontFamily: 'Consolas, monospace'
+    })
+    term.open(terminalContainer.value)
+
+    socket = new WebSocket(`ws://localhost:8000/ws/attach/${containerId}`)
+    socket.binaryType = 'arraybuffer'
+
+    socket.onopen = () => {
+      term.writeln('\x1b[32m✅ Подключено к контейнеру\x1b[0m')
+    }
+    socket.onmessage = (e) => {
+      const data = new Uint8Array(e.data)
+      term.write(data)
+    }
+    socket.onerror = () => term.writeln('\x1b[31m❌ Ошибка соединения\x1b[0m')
+    socket.onclose = () => term.writeln('\x1b[33m🔌 Соединение закрыто\x1b[0m')
+
+    term.onData(data => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(data)
+      }
+    })
+  })
+}
+
+const closeConsole = () => {
+  if (socket) {
+    socket.close()
+    socket = null
   }
-})
+  if (term) {
+    term.dispose()
+    term = null
+  }
+  showConsole.value = false
+}
 
 onMounted(loadContainers)
+
+onBeforeUnmount(() => {
+  closeConsole()
+  stopAutoUpdate()
+  if (cpuChart) cpuChart.destroy()
+})
 </script>
 
 <style scoped>
@@ -483,6 +558,7 @@ onMounted(loadContainers)
 .action-icon.remove:hover { background: var(--red); color: white; }
 .action-icon.logs:hover { background: #3b82f6; color: white; }
 .action-icon.metrics:hover { background: #8b5cf6; color: white; }
+.action-icon.console:hover { background: #2b6cb0; color: white; }
 .action-icon:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -554,5 +630,39 @@ onMounted(loadContainers)
 .chart-container {
   height: 80px;
   width: 100%;
+}
+
+/* Консоль */
+.console-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.console-container {
+  width: 80%;
+  height: 80%;
+  background: #0d1117;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.console-header {
+  padding: 12px 20px;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+.terminal {
+  flex: 1;
+  padding: 12px;
 }
 </style>
