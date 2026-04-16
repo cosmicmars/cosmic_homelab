@@ -187,6 +187,13 @@ const terminalContainer = ref(null)
 let term = null
 let socket = null
 
+const ws = new WebSocket("ws://localhost:8000/ws/host")
+
+ws.onopen = () => {
+  ws.send("Bearer SECRET")
+}
+
+
 const loadContainers = async () => {
   loading.value = true
   error.value = null
