@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "electron .",
+    "package": "npm run build && electron-builder --projectDir ."
   },
   "dependencies": {
     "@xterm/xterm": "^6.0.0",
@@ -20,9 +22,47 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.5",
     "vite": "^8.0.3",
-    "vite-plugin-vue-devtools": "^8.1.1"
+    "vite-plugin-vue-devtools": "^8.1.1",
+    "electron": "26.0.0",
+    "electron-builder": "26.8.1"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
+  }
+  ,
+  "main": "electron/main.cjs",
+  "description": "Cosmic Homelab desktop frontend",
+  "author": {
+    "name": "cosmic",
+    "email": "dev@cosmic.local"
+  },
+  "homepage": "https://cosmic-homelab.local",
+  "build": {
+    "appId": "com.cosmic.homelab",
+    "productName": "CosmicHomelab",
+    "publish": null,
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "public",
+      "output": "dist_electron"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "sign": false,
+      "notarize": false,
+      "hardenedRuntime": false
+    }
+    ,
+    "linux": {
+      "target": ["AppImage", "deb"]
+    },
+    "win": {
+      "target": ["nsis"]
+    }
   }
 }

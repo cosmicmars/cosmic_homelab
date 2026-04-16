@@ -1,7 +1,12 @@
 [
   {
-    "name": "Docker (Windows)",
-    "url": "npipe:////./pipe/docker_engine",
-    "id": "docker_(windows)"
+    "name": "Docker (Darwin)",
+    "url": "unix:///var/run/docker.sock",
+    "id": "docker_(darwin)"
+  },
+  {
+    "name": "Docker (Darwin)",
+    "url": "unix:///var/run/docker.sock",
+    "id": "docker_(darwin)"
   }
 ]
